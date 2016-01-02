@@ -46,6 +46,10 @@ public class BeforeOrAfterStep {
         return method;
     }
 
+    public Outcome getOutcome() {
+        return outcome;
+    }
+
     public Step createStep() {
         return createStepWith(Meta.EMPTY);
     }

@@ -14,7 +14,6 @@ import org.jbehave.core.configuration.MostUsefulConfiguration;
 import org.jbehave.core.failures.BeforeOrAfterFailed;
 import org.jbehave.core.failures.UUIDExceptionWrapper;
 import org.jbehave.core.i18n.LocalizedKeywords;
-import org.jbehave.core.model.Meta;
 import org.jbehave.core.steps.AbstractStepResult.Failed;
 import org.jbehave.core.steps.StepCollector.Stage;
 import org.jbehave.core.steps.Steps.DuplicateCandidateFound;
@@ -137,79 +136,75 @@ public class StepsBehaviour {
         beforeAfterGivenStory.get(1).createStep().perform(null);
         assertThat(steps.afterGivenStory, is(true));
     }
-    
+
     @Test
     public void shouldProvideStepsToBePerformedBeforeAndAfterScenariosWithFailureOccuring() {
         MultipleAliasesSteps steps = new MultipleAliasesSteps();
-        ScenarioType scenarioType = ScenarioType.NORMAL;
-        List<BeforeOrAfterStep> beforeAfterScenario = steps.listBeforeOrAfterScenario(scenarioType);
+        List<BeforeOrAfterStep> beforeAfterScenario = steps.listBeforeOrAfterScenario(ScenarioType.NORMAL);
+
         assertThat(beforeAfterScenario.size(), equalTo(4));
 
         beforeAfterScenario.get(0).createStep().perform(null);
         assertThat(steps.beforeNormalScenario, is(true));
 
-        Meta storyAndScenarioMeta = null;
-        // uponOutcome=ANY
-        beforeAfterScenario.get(1).createStepUponOutcome(storyAndScenarioMeta).perform(null);
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.ANY).createStepUponOutcome(null).perform(null);
         assertThat(steps.afterNormalScenario, is(true));
 
-        // uponOutcome=SUCCESS
-        beforeAfterScenario.get(2).createStepUponOutcome(storyAndScenarioMeta).doNotPerform(null);
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.SUCCESS).createStepUponOutcome(null).doNotPerform(null);
         assertThat(steps.afterSuccessfulScenario, is(false));
 
-        // uponOutcome=FAILURE
-        beforeAfterScenario.get(3).createStepUponOutcome(storyAndScenarioMeta).doNotPerform(null);
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.FAILURE).createStepUponOutcome(null).doNotPerform(null);
         assertThat(steps.afterFailedScenario, is(true));
     }
 
     @Test
     public void shouldProvideStepsToBePerformedBeforeAndAfterScenariosWithNoFailureOccuring() {
         MultipleAliasesSteps steps = new MultipleAliasesSteps();
-        ScenarioType scenarioType = ScenarioType.NORMAL;
-        List<BeforeOrAfterStep> beforeAfterScenario = steps.listBeforeOrAfterScenario(scenarioType);
+        List<BeforeOrAfterStep> beforeAfterScenario = steps.listBeforeOrAfterScenario(ScenarioType.NORMAL);
+
         assertThat(beforeAfterScenario.size(), equalTo(4));
         
         beforeAfterScenario.get(0).createStep().perform(null);
         assertThat(steps.beforeNormalScenario, is(true));
 
-        Meta storyAndScenarioMeta = null;
-        // uponOutcome=ANY
-        beforeAfterScenario.get(1).createStepUponOutcome(storyAndScenarioMeta).perform(null);
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.ANY).createStepUponOutcome(null).perform(null);
         assertThat(steps.afterNormalScenario, is(true));
-        
-        // uponOutcome=SUCCESS
-        beforeAfterScenario.get(2).createStepUponOutcome(storyAndScenarioMeta).perform(null);
-        assertThat(steps.afterSuccessfulScenario, is(true));
-        
-        // uponOutcome=FAILURE      
-        beforeAfterScenario.get(3).createStepUponOutcome(storyAndScenarioMeta).perform(null);
-        assertThat(steps.afterFailedScenario, is(false));
 
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.SUCCESS).createStepUponOutcome(null).perform(null);
+        assertThat(steps.afterSuccessfulScenario, is(true));
+
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.FAILURE).createStepUponOutcome(null).perform(null);
+        assertThat(steps.afterFailedScenario, is(false));
     }
         
     @Test
     public void shouldProvideStepsToBeNotPerformedAfterScenarioUponOutcome() {
-    	MultipleAliasesSteps steps = new MultipleAliasesSteps();
-        ScenarioType scenarioType = ScenarioType.NORMAL;
-        List<BeforeOrAfterStep> beforeAfterScenario = steps.listBeforeOrAfterScenario(scenarioType);
-		assertThat(beforeAfterScenario.size(), equalTo(4));
-		
-    	beforeAfterScenario.get(0).createStep().doNotPerform(null);
-    	assertThat(steps.beforeNormalScenario, is(true));
 
-        Meta storyAndScenarioMeta = null;
-        UUIDExceptionWrapper failure = new UUIDExceptionWrapper();
-        // uponOutcome=ANY
-        beforeAfterScenario.get(1).createStepUponOutcome(storyAndScenarioMeta).doNotPerform(failure);
-    	assertThat(steps.afterNormalScenario, is(true));
-    	
-    	// uponOutcome=SUCCESS
-        beforeAfterScenario.get(2).createStepUponOutcome(storyAndScenarioMeta).doNotPerform(failure);
-    	assertThat(steps.afterSuccessfulScenario, is(false));
-    	
-		// uponOutcome=FAILURE    	
-        beforeAfterScenario.get(3).createStepUponOutcome(storyAndScenarioMeta).doNotPerform(failure);
-    	assertThat(steps.afterFailedScenario, is(true));
+        MultipleAliasesSteps steps = new MultipleAliasesSteps();
+        List<BeforeOrAfterStep> beforeAfterScenario = steps.listBeforeOrAfterScenario(ScenarioType.NORMAL);
+
+        assertThat(beforeAfterScenario.size(), equalTo(4));
+
+        beforeAfterScenario.get(0).createStep().doNotPerform(null);
+        assertThat(steps.beforeNormalScenario, is(true));
+
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.ANY).createStepUponOutcome(null).doNotPerform(null);
+        assertThat(steps.afterNormalScenario, is(true));
+
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.SUCCESS).createStepUponOutcome(null).doNotPerform(null);
+        assertThat(steps.afterSuccessfulScenario, is(false));
+
+        findAfterStepForOutcome(beforeAfterScenario, AfterScenario.Outcome.FAILURE).createStepUponOutcome(null).doNotPerform(null);
+        assertThat(steps.afterFailedScenario, is(true));
+    }
+
+    private BeforeOrAfterStep findAfterStepForOutcome(List<BeforeOrAfterStep> beforeOrAfterSteps, AfterScenario.Outcome outcome) {
+        for (BeforeOrAfterStep beforeOrAfterStep : beforeOrAfterSteps) {
+            if (beforeOrAfterStep.getStage() == Stage.AFTER && beforeOrAfterStep.getOutcome() == outcome) {
+                return beforeOrAfterStep;
+            }
+        }
+        throw new AssertionError("Step with outcome " + outcome + " not found");
     }
 
     @Test

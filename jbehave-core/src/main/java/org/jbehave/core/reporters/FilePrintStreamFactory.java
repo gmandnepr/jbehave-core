@@ -5,9 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.io.CodeLocations;
 import org.jbehave.core.io.StoryLocation;
 
@@ -31,6 +31,7 @@ public class FilePrintStreamFactory implements PrintStreamFactory {
         this.configuration = configuration;
     }
 
+    @Override
     public PrintStream createPrintStream() {
         try {
             outputFile = outputFile();
@@ -92,6 +93,7 @@ public class FilePrintStreamFactory implements PrintStreamFactory {
      */
     public static abstract class AbstractPathResolver implements FilePathResolver {
 
+        @Override
         public String resolveDirectory(StoryLocation storyLocation, String relativeDirectory) {
             File parent = new File(CodeLocations.getPathFromURL(storyLocation.getCodeLocation())).getParentFile();
             return parent.getPath().replace('\\', '/') + "/" + relativeDirectory;
@@ -104,8 +106,9 @@ public class FilePrintStreamFactory implements PrintStreamFactory {
      */
     public static class ResolveToPackagedName extends AbstractPathResolver {
 
+        @Override
         public String resolveName(StoryLocation storyLocation, String extension) {
-            String name = storyLocation.getPath().replace('/', '.');
+            String name = storyLocation.getPath().replaceAll(":?/", ".");
             if (name.startsWith(".")) {
                 name = name.substring(1);
             }
@@ -119,6 +122,7 @@ public class FilePrintStreamFactory implements PrintStreamFactory {
      */
     public static class ResolveToSimpleName extends AbstractPathResolver {
 
+        @Override
         public String resolveName(StoryLocation storyLocation, String extension) {
             String name = storyLocation.getPath();
             if ( StringUtils.contains(name, '/') ){

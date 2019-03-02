@@ -32,16 +32,21 @@ public class ConcurrentStoryReporter implements StoryReporter {
     private static Method lifecycle;
     private static Method scenarioNotAllowed;
     private static Method beforeScenario;
+    private static Method beforeScenarioDeprecated;
     private static Method scenarioMeta;
     private static Method afterScenario;
+    private static Method beforeGivenStories;
     private static Method givenStories;
     private static Method givenStoriesPaths;
+    private static Method afterGivenStories;
     private static Method beforeExamples;
+    private static Method exampleDeprecated;
     private static Method example;
     private static Method afterExamples;
     private static Method beforeStep;
     private static Method successful;
     private static Method ignorable;
+    private static Method comment;
     private static Method pending;
     private static Method notPerformed;
     private static Method failed;
@@ -60,17 +65,22 @@ public class ConcurrentStoryReporter implements StoryReporter {
             narrative = StoryReporter.class.getMethod("narrative", Narrative.class);
             lifecycle = StoryReporter.class.getMethod("lifecyle", Lifecycle.class);
             scenarioNotAllowed = StoryReporter.class.getMethod("scenarioNotAllowed", Scenario.class, String.class);
-            beforeScenario = StoryReporter.class.getMethod("beforeScenario", String.class);
+            beforeScenario = StoryReporter.class.getMethod("beforeScenario", Scenario.class);
+            beforeScenarioDeprecated = StoryReporter.class.getMethod("beforeScenario", String.class);
             scenarioMeta = StoryReporter.class.getMethod("scenarioMeta", Meta.class);
             afterScenario = StoryReporter.class.getMethod("afterScenario");
+            beforeGivenStories = StoryReporter.class.getMethod("beforeGivenStories");
             givenStories = StoryReporter.class.getMethod("givenStories", GivenStories.class);
             givenStoriesPaths = StoryReporter.class.getMethod("givenStories", List.class);
+            afterGivenStories = StoryReporter.class.getMethod("afterGivenStories");
             beforeExamples = StoryReporter.class.getMethod("beforeExamples", List.class, ExamplesTable.class);
-            example = StoryReporter.class.getMethod("example", Map.class);
+            exampleDeprecated = StoryReporter.class.getMethod("example", Map.class);
+            example = StoryReporter.class.getMethod("example", Map.class, int.class);
             afterExamples = StoryReporter.class.getMethod("afterExamples");
             beforeStep = StoryReporter.class.getMethod("beforeStep", String.class);
             successful = StoryReporter.class.getMethod("successful", String.class);
             ignorable = StoryReporter.class.getMethod("ignorable", String.class);
+            comment = StoryReporter.class.getMethod("comment", String.class);
             pending = StoryReporter.class.getMethod("pending", String.class);
             notPerformed = StoryReporter.class.getMethod("notPerformed", String.class);
             failed = StoryReporter.class.getMethod("failed", String.class, Throwable.class);
@@ -84,7 +94,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
-    private List<DelayedMethod> delayedMethods = new ArrayList<DelayedMethod>();
+    private final List<DelayedMethod> delayedMethods;
     private final StoryReporter crossReferencing;
     private final StoryReporter delegate;
     private final boolean multiThreading;
@@ -92,10 +102,12 @@ public class ConcurrentStoryReporter implements StoryReporter {
 
     public ConcurrentStoryReporter(StoryReporter crossReferencing, StoryReporter delegate, boolean multiThreading) {
         this.crossReferencing = crossReferencing;
-        this.multiThreading = multiThreading;
         this.delegate = delegate;
+        this.multiThreading = multiThreading;
+        delayedMethods = multiThreading ? Collections.synchronizedList(new ArrayList<DelayedMethod>()) : null;
     }
 
+    @Override
     public void storyNotAllowed(Story story, String filter) {
         crossReferencing.storyNotAllowed(story, filter);
         if (multiThreading) {
@@ -105,6 +117,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void beforeStory(Story story, boolean givenStory) {
         crossReferencing.beforeStory(story, givenStory);
         if (multiThreading) {
@@ -114,6 +127,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void afterStory(boolean givenStory) {
         crossReferencing.afterStory(givenStory);
         if (multiThreading) {
@@ -123,6 +137,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void narrative(Narrative aNarrative) {
         crossReferencing.narrative(aNarrative);
         if (multiThreading) {
@@ -132,6 +147,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
     
+    @Override
     public void lifecyle(Lifecycle aLifecycle) {
         crossReferencing.lifecyle(aLifecycle);
         if (multiThreading) {
@@ -141,6 +157,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void scenarioNotAllowed(Scenario scenario, String filter) {
         crossReferencing.scenarioNotAllowed(scenario, filter);
         if (multiThreading) {
@@ -150,15 +167,27 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
+    public void beforeScenario(Scenario scenario) {
+        crossReferencing.beforeScenario(scenario);
+        if (multiThreading) {
+            delayedMethods.add(new DelayedMethod(beforeScenario, scenario));
+        } else {
+            delegate.beforeScenario(scenario);
+        }
+    }
+
+    @Override
     public void beforeScenario(String scenarioTitle) {
         crossReferencing.beforeScenario(scenarioTitle);
         if (multiThreading) {
-            delayedMethods.add(new DelayedMethod(beforeScenario, scenarioTitle));
+            delayedMethods.add(new DelayedMethod(beforeScenarioDeprecated, scenarioTitle));
         } else {
             delegate.beforeScenario(scenarioTitle);
         }
     }
 
+    @Override
     public void scenarioMeta(Meta meta) {
         crossReferencing.scenarioMeta(meta);
         if (multiThreading) {
@@ -168,6 +197,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void afterScenario() {
         crossReferencing.afterScenario();
         if (multiThreading) {
@@ -177,6 +207,17 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
+    public void beforeGivenStories() {
+        crossReferencing.beforeGivenStories();
+        if (multiThreading) {
+            delayedMethods.add(new DelayedMethod(beforeGivenStories));
+        } else {
+            delegate.beforeGivenStories();
+        }
+    }
+
+    @Override
     public void givenStories(GivenStories stories) {
         crossReferencing.givenStories(stories);
         if (multiThreading) {
@@ -186,6 +227,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void givenStories(List<String> storyPaths) {
         crossReferencing.givenStories(storyPaths);
         if (multiThreading) {
@@ -195,6 +237,17 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
+    public void afterGivenStories() {
+        crossReferencing.afterGivenStories();
+        if (multiThreading) {
+            delayedMethods.add(new DelayedMethod(afterGivenStories));
+        } else {
+            delegate.afterGivenStories();
+        }
+    }
+
+    @Override
     public void beforeExamples(List<String> steps, ExamplesTable table) {
         crossReferencing.beforeExamples(steps, table);
         if (multiThreading) {
@@ -204,15 +257,27 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void example(Map<String, String> tableRow) {
         crossReferencing.example(tableRow);
         if (multiThreading) {
-            delayedMethods.add(new DelayedMethod(example, tableRow));
+            delayedMethods.add(new DelayedMethod(exampleDeprecated, tableRow));
         } else {
             delegate.example(tableRow);
         }
     }
 
+    @Override
+    public void example(Map<String, String> tableRow, int exampleIndex) {
+        crossReferencing.example(tableRow, exampleIndex);
+        if (multiThreading) {
+            delayedMethods.add(new DelayedMethod(example, tableRow, exampleIndex));
+        } else {
+            delegate.example(tableRow, exampleIndex);
+        }
+    }
+
+    @Override
     public void afterExamples() {
         crossReferencing.afterExamples();
         if (multiThreading) {
@@ -222,6 +287,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void beforeStep(String step) {
         crossReferencing.beforeStep(step);
         if (multiThreading) {
@@ -231,6 +297,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void successful(String step) {
         crossReferencing.successful(step);
         if (multiThreading) {
@@ -240,6 +307,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void ignorable(String step) {
         crossReferencing.ignorable(step);
         if (multiThreading) {
@@ -249,6 +317,17 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
+    public void comment(String step) {
+        crossReferencing.comment(step);
+        if (multiThreading) {
+            delayedMethods.add(new DelayedMethod(comment, step));
+        } else {
+            delegate.comment(step);
+        }
+    }
+
+    @Override
     public void pending(String step) {
         crossReferencing.pending(step);
         if (multiThreading) {
@@ -258,6 +337,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void notPerformed(String step) {
         crossReferencing.notPerformed(step);
         if (multiThreading) {
@@ -267,6 +347,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void failed(String step, Throwable cause) {
         crossReferencing.failed(step, cause);
         if (multiThreading) {
@@ -276,6 +357,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void failedOutcomes(String step, OutcomesTable table) {
         crossReferencing.failedOutcomes(step, table);
         if (multiThreading) {
@@ -285,6 +367,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void dryRun() {
         crossReferencing.dryRun();
         if (multiThreading) {
@@ -294,6 +377,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void pendingMethods(List<String> methods) {
         crossReferencing.pendingMethods(methods);
         if (multiThreading) {
@@ -304,6 +388,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         
     }
     
+    @Override
     public void restarted(String step, Throwable cause) {
         crossReferencing.restarted(step, cause);
         if (multiThreading) {
@@ -313,6 +398,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
     
+    @Override
     public void restartedStory(Story story, Throwable cause){
         crossReferencing.restartedStory(story, cause);
         if (multiThreading) {
@@ -322,6 +408,7 @@ public class ConcurrentStoryReporter implements StoryReporter {
         }
     }
 
+    @Override
     public void storyCancelled(Story story, StoryDuration storyDuration) {
         crossReferencing.storyCancelled(story, storyDuration);
         if (multiThreading) {
@@ -344,9 +431,10 @@ public class ConcurrentStoryReporter implements StoryReporter {
             return;
         }
         synchronized (delegate) {
-            for (DelayedMethod delayed : Collections.unmodifiableList(delayedMethods)) {
+            for (DelayedMethod delayed : delayedMethods) {
                 delayed.invoke(delegate);
             }
+            delayedMethods.clear();
         }
         invoked = true;
     }
@@ -372,5 +460,4 @@ public class ConcurrentStoryReporter implements StoryReporter {
             }
         }
     }
-
 }

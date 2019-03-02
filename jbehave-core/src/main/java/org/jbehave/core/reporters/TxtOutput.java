@@ -27,29 +27,22 @@ public class TxtOutput extends PrintStreamOutput {
         this(output, outputPatterns, new LocalizedKeywords());
     }
 
-	public TxtOutput(PrintStream output, Keywords keywords) {
-		this(output, new Properties(), keywords);
-	}
+    public TxtOutput(PrintStream output, Keywords keywords) {
+        this(output, new Properties(), keywords);
+    }
 
-	public TxtOutput(PrintStream output, Properties outputPatterns, Keywords keywords) {
-		this(output, outputPatterns, keywords, false);
-	}
+    public TxtOutput(PrintStream output, Properties outputPatterns, Keywords keywords) {
+        this(output, outputPatterns, keywords, false);
+    }
 
     public TxtOutput(PrintStream output, Properties outputPatterns,
             Keywords keywords, boolean reportFailureTrace) {
-        this(output, mergeWithDefault(outputPatterns), keywords, reportFailureTrace, false);
+        this(output, outputPatterns, keywords, reportFailureTrace, false);
     }
 
     public TxtOutput(PrintStream output, Properties outputPatterns,
             Keywords keywords, boolean reportFailureTrace, boolean compressFailureTrace) {
-        super(TXT, output, mergeWithDefault(outputPatterns), keywords, reportFailureTrace, compressFailureTrace);
-    }
-
-    private static Properties mergeWithDefault(Properties outputPatterns) {
-        Properties patterns = defaultPatterns();
-        // override any default pattern
-        patterns.putAll(outputPatterns);
-        return patterns;
+        super(TXT, output, defaultPatterns(), outputPatterns, keywords, reportFailureTrace, compressFailureTrace);
     }
 
     private static Properties defaultPatterns() {
@@ -63,15 +56,28 @@ public class TxtOutput extends PrintStreamOutput {
         patterns.setProperty("metaEnd", "\n");
         patterns.setProperty("filter", "{0}\n");
         patterns.setProperty("narrative", "{0}\n{1} {2}\n{3} {4}\n{5} {6}\n");
+        patterns.setProperty("lifecycleStart", "{0}\n");
+        patterns.setProperty("lifecycleEnd", "\n");
+        patterns.setProperty("lifecycleBeforeStart", "{0}\n");
+        patterns.setProperty("lifecycleBeforeEnd", "\n");
+        patterns.setProperty("lifecycleAfterStart", "{0}\n");
+        patterns.setProperty("lifecycleAfterEnd", "\n");
+        patterns.setProperty("lifecycleScopeStart", "{0} {1}\n");
+        patterns.setProperty("lifecycleScopeEnd", "\n");
+        patterns.setProperty("lifecycleOutcomeStart", "{0} {1}\n");
+        patterns.setProperty("lifecycleOutcomeEnd", "\n");
+        patterns.setProperty("lifecycleMetaFilter", "{0} {1}\n");
+        patterns.setProperty("lifecycleStep", "{0}\n");
         patterns.setProperty("beforeScenario", "{0} {1}\n");
         patterns.setProperty("afterScenario", "\n");
         patterns.setProperty("afterScenarioWithFailure", "\n{0}\n");
         patterns.setProperty("givenStories", "{0} {1}\n");
         patterns.setProperty("givenStoriesStart", "{0}\n");
-        patterns.setProperty("givenStory", "{0} {1}\n");
+        patterns.setProperty("givenStory", "{0}{1}\n");
         patterns.setProperty("givenStoriesEnd", "\n");
         patterns.setProperty("successful", "{0}\n");
         patterns.setProperty("ignorable", "{0}\n");
+        patterns.setProperty("comment", "{0}\n");
         patterns.setProperty("pending", "{0} ({1})\n");
         patterns.setProperty("notPerformed", "{0} ({1})\n");
         patterns.setProperty("failed", "{0} ({1})\n({2})\n");
@@ -106,6 +112,4 @@ public class TxtOutput extends PrintStreamOutput {
         patterns.setProperty("parameterValueNewline", "\n");     
         return patterns;
     }
-
-
 }

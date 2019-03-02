@@ -4,25 +4,25 @@ import org.jbehave.core.failures.UUIDExceptionWrapper;
 import org.jbehave.core.reporters.StoryReporter;
 
 public interface StepResult {
-	
-	enum Type {
-		FAILED,
-		NOT_PERFORMED,
-		PENDING, 
-		SUCCESSFUL,
-		SILENT,
-		IGNORABLE,
-		SKIPPED
-	}
 
-	String parametrisedStep();
+    enum Type {
+        FAILED,
+        NOT_PERFORMED,
+        PENDING,
+        SUCCESSFUL,
+        SILENT,
+        IGNORABLE,
+        COMMENT,
+        SKIPPED
+    }
 
-	StepResult withParameterValues(String parametrisedStep);
+    String parametrisedStep();
 
-    StepResult withDurationInMillis(long duration);
+    StepResult withParameterValues(String parametrisedStep);
 
-	void describeTo(StoryReporter reporter);
+    StepResult setTimings(Timer timer);
 
-	UUIDExceptionWrapper getFailure();
+    void describeTo(StoryReporter reporter);
 
+    UUIDExceptionWrapper getFailure();
 }

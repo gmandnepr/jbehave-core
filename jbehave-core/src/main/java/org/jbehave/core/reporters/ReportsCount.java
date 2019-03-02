@@ -1,7 +1,7 @@
 package org.jbehave.core.reporters;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class ReportsCount {
 
@@ -59,15 +59,13 @@ public class ReportsCount {
     }
 
     public boolean failed(){
-        if ( scenariosFailed > 0 || stepsFailed > 0 ) return true;
+        return scenariosFailed > 0 || stepsFailed > 0;
 // JBEHAVE-472:  find a better way to express failures before scenarios        
 //        if ( stories > 0 && scenarios == 0 ) return true;
-        return false;
     }
 
     public boolean pending(){
-        if ( scenariosPending > 0 || storiesPending > 0 ) return true;
-        return false;
+        return scenariosPending > 0 || storiesPending > 0;
     }
 
     @Override

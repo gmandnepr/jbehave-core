@@ -3,7 +3,7 @@ package org.jbehave.examples.threads;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jbehave.core.Embeddable;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.MostUsefulConfiguration;
@@ -57,11 +57,13 @@ public class ThreadsStories extends JUnitStories {
     
     public static class CustomTimeoutParser implements TimeoutParser {
 
-    	public boolean isValid(String timeout) {
+    	@Override
+        public boolean isValid(String timeout) {
     		return timeout.matches("(\\d+)secs");
     	}
 
-    	public long asSeconds(String timeout) {
+    	@Override
+        public long asSeconds(String timeout) {
     		return Long.parseLong(StringUtils.substringBefore(timeout, "secs"));
     	}
 

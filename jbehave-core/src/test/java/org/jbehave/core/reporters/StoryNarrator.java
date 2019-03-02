@@ -11,19 +11,12 @@ import java.util.Date;
 import java.util.Properties;
 
 import org.hamcrest.core.IsEqual;
+import org.jbehave.core.annotations.Scope;
 import org.jbehave.core.failures.RestartingScenarioFailure;
 import org.jbehave.core.failures.RestartingStoryFailure;
 import org.jbehave.core.failures.UUIDExceptionWrapper;
 import org.jbehave.core.i18n.LocalizedKeywords;
-import org.jbehave.core.model.Description;
-import org.jbehave.core.model.ExamplesTable;
-import org.jbehave.core.model.GivenStories;
-import org.jbehave.core.model.Meta;
-import org.jbehave.core.model.Narrative;
-import org.jbehave.core.model.OutcomesTable;
-import org.jbehave.core.model.Scenario;
-import org.jbehave.core.model.Story;
-import org.jbehave.core.model.StoryDuration;
+import org.jbehave.core.model.*;
 import org.jbehave.core.model.OutcomesTable.OutcomesFailed;
 import org.jbehave.core.steps.StepCreator;
 
@@ -34,16 +27,25 @@ class StoryNarrator {
         Properties meta = new Properties();
         meta.setProperty("theme", "testing");
         meta.setProperty("author", "Mauro");
+        Lifecycle.Steps beforeScenarioSteps = new Lifecycle.Steps(Scope.SCENARIO, asList("Given a scenario step"));
+        Lifecycle.Steps beforeStorySteps = new Lifecycle.Steps(Scope.STORY, asList("Given a story step"));
+        Lifecycle.Steps afterScenarioSteps = new Lifecycle.Steps(Scope.SCENARIO, asList("Given a scenario step"));
+        Lifecycle.Steps afterStorySteps = new Lifecycle.Steps(Scope.STORY, asList("Given a story step"));
+        Lifecycle lifecycle = new Lifecycle(asList(beforeScenarioSteps, beforeStorySteps), asList(afterScenarioSteps, afterStorySteps));
         Story story = new Story("/path/to/story", new Description("An interesting story & special chars"), new Meta(meta),
-                new Narrative("renovate my house", "customer", "get a loan"), new ArrayList<Scenario>());
+                new Narrative("renovate my house", "customer", "get a loan"), GivenStories.EMPTY, lifecycle, new ArrayList<Scenario>());
         boolean givenStory = false;
         reporter.beforeStory(story, givenStory);
         reporter.dryRun();
         reporter.narrative(story.getNarrative());
-        reporter.beforeScenario("I ask for a loan");
+        reporter.lifecyle(lifecycle);
+        reporter.beforeScenario(new Scenario("I ask for a loan", Meta.EMPTY));
+        reporter.beforeGivenStories();
         reporter.givenStories(asList("/given/story1", "/given/story2"));
+        reporter.afterGivenStories();
         reporter.successful("Given I have a balance of $50");
-        reporter.ignorable("!-- A comment");
+        reporter.ignorable("!-- Then ignore me");
+        reporter.comment("!-- A comment");
         reporter.successful("When I request $20");
         reporter.successful("When I ask Liz for a loan of $100");
         reporter.successful("When I ask Liz for a loan of $"+StepCreator.PARAMETER_VALUE_START+"99"+StepCreator.PARAMETER_VALUE_END);
@@ -57,7 +59,7 @@ class StoryNarrator {
         reporter.restartedStory(story, new RestartingStoryFailure("Restarted Story"));
         reporter.storyCancelled(story, new StoryDuration(1).setDurationInSecs(2));
         if (withFailure) {
-            reporter.failed("Then I should have a balance of $30", new Exception("Expected <30> got <25>"));
+            reporter.failed("Then I should have a balance of $30", new UUIDExceptionWrapper(new Exception("Expected <30> got <25>")));
         } else {
             reporter.pending("Then I should have a balance of $30");
         }
@@ -73,17 +75,17 @@ class StoryNarrator {
             reporter.failedOutcomes("Then I don't return loan", ((OutcomesFailed) e.getCause()).outcomesTable());
         }
         reporter.afterScenario();
-        reporter.beforeScenario("Parametrised Scenario");
+        reporter.beforeScenario(new Scenario("Parametrised Scenario", Meta.EMPTY));
         ExamplesTable table = new ExamplesTable("|money|to|\n|$30|Mauro|\n|$50|Paul|\n");
         reporter.beforeExamples(asList("Given money <money>", "Then I give it to <to>"), table);
-        reporter.example(table.getRow(0));
+        reporter.example(table.getRow(0), 0);
         reporter.successful("Given money $30");
         reporter.successful("Then I give it to Mauro");
-        reporter.example(table.getRow(1));
+        reporter.example(table.getRow(1), 1);
         reporter.successful("Given money $50");
         reporter.successful("Then I give it to Paul");
         if (withFailure) {
-            reporter.failed("Then I should have a balance of $30", new Exception("Expected <30> got <25>"));
+            reporter.failed("Then I should have a balance of $30", new UUIDExceptionWrapper(new Exception("Expected <30> got <25>")));
         } else {
             reporter.pending("Then I should have a balance of $30");
         }
@@ -136,13 +138,14 @@ class StoryNarrator {
         meta.setProperty("author", "Mauro");
         Story story = new Story("/path/to/story",
                 new Description("An interesting story"), new Meta(meta), new Narrative("renovate my house", "customer", "get a loan"),
-                Arrays.asList(new Scenario("A scenario", new Meta(meta), GivenStories.EMPTY, ExamplesTable.EMPTY, new ArrayList<String>())));
+                Arrays.asList(new Scenario("A scenario", Meta.EMPTY, GivenStories.EMPTY, ExamplesTable.EMPTY, new ArrayList<String>())));
         reporter.beforeStory(story, false);
         if (storyNotAllowed) {
             reporter.storyNotAllowed(story, "-theme testing");
         } else  {
-            reporter.beforeScenario(story.getScenarios().get(0).getTitle());
-            reporter.scenarioNotAllowed(story.getScenarios().get(0), "-theme testing");
+            Scenario scenario = story.getScenarios().get(0);
+            reporter.beforeScenario(scenario);
+            reporter.scenarioNotAllowed(scenario, "-theme testing");
             reporter.afterScenario();
         }
         reporter.afterStory(false);

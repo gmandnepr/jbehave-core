@@ -26,13 +26,12 @@ Keep an eye on the  [Travis CI](http://travis-ci.org/jbehave) server for JBehave
 
 JDK version required: 
 
-1.7 or above to build (tested with Oracle JDK on different platforms)
-
-The target runtime version is still 1.5 or above.
+1.7 or above at build and runtime (tested with Oracle JDK on different platforms)
 
 ### Maven 
 
-[Maven](http://maven.apache.org) version required to build: 3.0 or above.
+[Maven](http://maven.apache.org) version required to build: 3.5 or above 
+(while tested with 3.5.x it may also work with previous 3.x versions)
 
 ### Encoding
 

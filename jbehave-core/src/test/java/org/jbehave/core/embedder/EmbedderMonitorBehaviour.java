@@ -31,16 +31,16 @@ import static org.mockito.Mockito.verify;
 public class EmbedderMonitorBehaviour {
 
     @Test
-    public void shouldNotPrintWithSilentMonitor() throws Throwable {
+    public void shouldNotPrintWithSilentMonitor() {
         OutputStream out = new ByteArrayOutputStream();
-        SilentEmbedderMonitor monitor = new SilentEmbedderMonitor(new PrintStream(out));
+        SilentEmbedderMonitor monitor = new SilentEmbedderMonitor();
         monitor.print("a message");
         monitor.printStackTrace(new RuntimeException());
         assertThat(out.toString(), is(""));
     }
 
     @Test
-    public void shouldOnlyPrintFailuresWithReportingFailuresMonitor() throws Throwable {
+    public void shouldOnlyPrintFailuresWithReportingFailuresMonitor() {
         OutputStream out = new ByteArrayOutputStream();
         ReportingFailuresEmbedderMonitor monitor = new ReportingFailuresEmbedderMonitor(new PrintStream(out));
         monitor.runningEmbeddable("embeddable");
@@ -54,14 +54,14 @@ public class EmbedderMonitorBehaviour {
    }
 
     @Test
-    public void shouldDelegateOutput() throws Throwable {
+    public void shouldDelegateOutput() {
         EmbedderMonitor monitor = new ReportingFailuresEmbedderMonitor();
         assertThat(monitor.toString(), containsString(ReportingFailuresEmbedderMonitor.class.getSimpleName()+"[output="));
    }
 
 
     @Test
-    public void shouldAllowDecorationOfDelegate() throws Throwable {
+    public void shouldAllowDecorationOfDelegate() {
         // Given
         EmbedderMonitor delegate = mock(EmbedderMonitor.class);
         EmbedderMonitor monitor = new EmbedderMonitorDecorator(delegate);

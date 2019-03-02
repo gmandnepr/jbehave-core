@@ -18,7 +18,7 @@ public class GroovyStepsFactory extends AbstractStepsFactory {
 
     @Override
     protected List<Class<?>> stepsTypes() {
-        List<Class<?>> types = new ArrayList<Class<?>>();
+        List<Class<?>> types = new ArrayList<>();
         for (Object object : context.getInstances() ){
             if (hasAnnotatedMethods(object.getClass())) {
                 types.add(object.getClass());
@@ -27,6 +27,7 @@ public class GroovyStepsFactory extends AbstractStepsFactory {
         return types;
     }
 
+    @Override
     public Object createInstanceOfType(Class<?> type) {
         return context.getInstanceOfType(type);
     }

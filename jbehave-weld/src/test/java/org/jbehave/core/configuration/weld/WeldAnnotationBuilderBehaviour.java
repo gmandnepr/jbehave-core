@@ -37,7 +37,6 @@ import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
 import org.jbehave.core.steps.CandidateSteps;
 import org.jbehave.core.steps.ParameterConverters;
 import org.jbehave.core.steps.Steps;
-import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -149,7 +148,7 @@ public class WeldAnnotationBuilderBehaviour {
     }
     
     private void assertThatCustomObjectIsConverted(ParameterConverters parameterConverters) {
-        assertThat(((CustomObject) parameterConverters.convert("value", CustomObject.class)).toString(),
+        assertThat(parameterConverters.convert("value", CustomObject.class).toString(),
                 equalTo(new CustomObject("value").toString()));
     }
 
@@ -158,7 +157,7 @@ public class WeldAnnotationBuilderBehaviour {
         try {
             assertThat((Date) parameterConverters.convert(date, Date.class), equalTo(dateFormat.parse(date)));
         } catch (ParseException e) {
-            Assert.fail();
+            throw new AssertionError();
         }
     }
     

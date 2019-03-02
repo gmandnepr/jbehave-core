@@ -1,6 +1,6 @@
 package org.jbehave.core.reporters;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jbehave.core.model.ExamplesTable;
 import org.jbehave.core.model.GivenStories;
 import org.jbehave.core.model.Meta;
@@ -39,17 +39,19 @@ public class DelegatingStoryReporterBehaviour {
         
         delegator.beforeStory(story, givenStory);        
         delegator.storyNotAllowed(story, filter);
+        delegator.beforeScenario(scenario);
         delegator.beforeScenario("My scenario 1");
         delegator.scenarioNotAllowed(scenario, filter);
         delegator.scenarioMeta(Meta.EMPTY);
         delegator.givenStories(givenStoryPaths);
         delegator.givenStories(givenStories);
         delegator.successful("Given step 1.1");
-        delegator.ignorable("!-- ignore me");
+        delegator.ignorable("!-- Then ignore me");
+        delegator.comment("!-- comment");
         delegator.pending("When step 1.2");
         delegator.notPerformed("Then step 1.3");
         delegator.beforeExamples(asList("Given step <one>", "Then step <two>"), examplesTable);
-        delegator.example(examplesTable.getRow(0));
+        delegator.example(examplesTable.getRow(0), 0);
         delegator.afterExamples();
         delegator.afterScenario();
        
@@ -70,18 +72,20 @@ public class DelegatingStoryReporterBehaviour {
 
         inOrder.verify(delegate).beforeStory(story, givenStory);
         inOrder.verify(delegate).storyNotAllowed(story, filter);
-        
+
+        inOrder.verify(delegate).beforeScenario(scenario);
         inOrder.verify(delegate).beforeScenario("My scenario 1");
         inOrder.verify(delegate).scenarioNotAllowed(scenario, filter);
         inOrder.verify(delegate).scenarioMeta(Meta.EMPTY);
         inOrder.verify(delegate).givenStories(givenStoryPaths);
         inOrder.verify(delegate).givenStories(givenStories);
         inOrder.verify(delegate).successful("Given step 1.1");
-        inOrder.verify(delegate).ignorable("!-- ignore me");
+        inOrder.verify(delegate).ignorable("!-- Then ignore me");
+        inOrder.verify(delegate).comment("!-- comment");
         inOrder.verify(delegate).pending("When step 1.2");
         inOrder.verify(delegate).notPerformed("Then step 1.3");
         inOrder.verify(delegate).beforeExamples(asList("Given step <one>", "Then step <two>"), examplesTable);
-        inOrder.verify(delegate).example(examplesTable.getRow(0));
+        inOrder.verify(delegate).example(examplesTable.getRow(0), 0);
         inOrder.verify(delegate).afterExamples();
         inOrder.verify(delegate).afterScenario();
         
@@ -92,6 +96,5 @@ public class DelegatingStoryReporterBehaviour {
         inOrder.verify(delegate).afterScenario();
         
         inOrder.verify(delegate).afterStory(givenStory);
-        
     }
 }

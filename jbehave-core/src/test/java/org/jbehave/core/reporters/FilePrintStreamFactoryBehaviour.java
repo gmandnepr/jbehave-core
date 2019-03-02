@@ -67,6 +67,8 @@ public class FilePrintStreamFactoryBehaviour {
                 "org.jbehave.examples.trader.stories.my_given.ext", null);
         assertThatOutputNameIs("my_given.story", "my_given.ext", null);
         assertThatOutputNameIs("my_given", "my_given.ext", null);
+        assertThatOutputNameIs("c:/org/jbehave/examples/trader/stories/my_given.story",
+                "c.org.jbehave.examples.trader.stories.my_given.ext", null);
     }
 
     @Test
@@ -98,6 +100,7 @@ public class FilePrintStreamFactoryBehaviour {
         String storyPath = "org/jbehave/examples/trader/stories/my_given.story";
         FileConfiguration configuration = new FileConfiguration("ext");
         FilePrintStreamFactory factory = new FilePrintStreamFactory(new StoryLocation(codeLocation, storyPath), configuration){
+            @Override
             protected File outputDirectory() {
                 return new File((String)null);
             }

@@ -7,9 +7,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.configuration.Keywords;
 
 public class Meta {
@@ -35,14 +35,14 @@ public class Meta {
     }
 
     private void parse(List<String> propertiesAsString) {
-        for (String propertyAsString : new HashSet<String>(propertiesAsString)) {
+        for (String propertyAsString : new HashSet<>(propertiesAsString)) {
             Property property = new Property(propertyAsString);
             this.properties.setProperty(property.getName(), property.getValue());
         }
     }
 
     public Set<String> getPropertyNames() {
-        Set<String> names = new TreeSet<String>();
+        Set<String> names = new TreeSet<>();
         for (Object key : properties.keySet()) {
             names.add((String) key);
         }
@@ -66,7 +66,7 @@ public class Meta {
     }
 
     private Meta inherit(Meta child, Meta parent) {
-        Set<String> names = new HashSet<String>(child.getPropertyNames());
+        Set<String> names = new HashSet<>(child.getPropertyNames());
         // only names that are not already present in the child are added
         names.addAll(parent.getPropertyNames());
         Properties inherited = new Properties();
@@ -85,7 +85,7 @@ public class Meta {
     }
     
 	public String asString(Keywords keywords) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (String name : getPropertyNames()) {
 			sb.append(keywords.metaProperty()).append(name).append(SPACE)
 					.append(getProperty(name)).append(SPACE);
@@ -125,7 +125,7 @@ public class Meta {
     }
 
     public static Meta createMeta(String meta, Keywords keywords) {
-        List<String> properties = new ArrayList<String>();
+        List<String> properties = new ArrayList<>();
         for (String property : meta.split(keywords.metaProperty())) {
             if (StringUtils.isNotBlank(property)) {
                 String beforeIgnorable = StringUtils.substringBefore(property,keywords.ignorable());

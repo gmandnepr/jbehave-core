@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jbehave.core.ConfigurableEmbedder;
 import org.jbehave.core.Embeddable;
 import org.jbehave.core.annotations.Configure;
@@ -20,9 +20,11 @@ import org.jbehave.core.embedder.StoryControls;
 import org.jbehave.core.failures.FailureStrategy;
 import org.jbehave.core.failures.PendingStepStrategy;
 import org.jbehave.core.io.PathCalculator;
+import org.jbehave.core.io.ResourceLoader;
 import org.jbehave.core.io.StoryFinder;
 import org.jbehave.core.io.StoryLoader;
 import org.jbehave.core.io.StoryPathResolver;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.parsers.StepPatternParser;
 import org.jbehave.core.parsers.StoryParser;
 import org.jbehave.core.reporters.StepdocReporter;
@@ -104,7 +106,9 @@ public class AnnotationBuilder {
         configuration.useStoryReporterBuilder(configurationElement(finder, "storyReporterBuilder",
                 StoryReporterBuilder.class));
         configuration.useViewGenerator(configurationElement(finder, "viewGenerator", ViewGenerator.class));
-        configuration.useParameterConverters(parameterConverters(finder));
+        configuration.useTableTransformers(configurationElement(finder, "tableTransformers", TableTransformers.class));
+        configuration.useParameterConverters(
+                parameterConverters(finder, configuration.storyLoader(), configuration.tableTransformers()));
         configuration.useParameterControls(configurationElement(finder, "parameterControls", ParameterControls.class));
         configuration.usePathCalculator(configurationElement(finder, "pathCalculator", PathCalculator.class));
         return configuration;
@@ -141,29 +145,29 @@ public class AnnotationBuilder {
      * @return A {@link InjectableStepsFactory}
      */
     public InjectableStepsFactory buildStepsFactory(Configuration configuration) {
-        List<Object> stepsInstances = new ArrayList<Object>();
+        List<Object> stepsInstances = new ArrayList<>();
         InjectableStepsFactory factory = null;
         if (finder.isAnnotationPresent(UsingSteps.class)) {
-			List<Class<Object>> stepsClasses = finder.getAnnotatedClasses(
-					UsingSteps.class, Object.class, "instances");
-			if (!stepsClasses.isEmpty()) {
-				for (Class<Object> stepsClass : stepsClasses) {
-					stepsInstances.add(instanceOf(Object.class, stepsClass));
-				}
-				factory = new InstanceStepsFactory(configuration,
-						stepsInstances);
-			}
-			List<String> packages = finder.getAnnotatedValues(UsingSteps.class,
-					String.class, "packages");
-			if (!packages.isEmpty()) {
-				String matchingNames = finder.getAnnotatedValue(UsingSteps.class,
-						String.class, "matchingNames");
-				String notMatchingNames = finder.getAnnotatedValue(UsingSteps.class,
-						String.class, "notMatchingNames");
-				factory = new ScanningStepsFactory(configuration,
-						packages.toArray(new String[packages.size()]))
-						.matchingNames(matchingNames).notMatchingNames(notMatchingNames);
-			}
+            List<Class<Object>> stepsClasses = finder.getAnnotatedClasses(
+                    UsingSteps.class, Object.class, "instances");
+            if (!stepsClasses.isEmpty()) {
+                for (Class<Object> stepsClass : stepsClasses) {
+                    stepsInstances.add(instanceOf(Object.class, stepsClass));
+                }
+                factory = new InstanceStepsFactory(configuration,
+                        stepsInstances);
+            }
+            List<String> packages = finder.getAnnotatedValues(UsingSteps.class,
+                    String.class, "packages");
+            if (!packages.isEmpty()) {
+                String matchingNames = finder.getAnnotatedValue(UsingSteps.class,
+                        String.class, "matchingNames");
+                String notMatchingNames = finder.getAnnotatedValue(UsingSteps.class,
+                        String.class, "notMatchingNames");
+                factory = new ScanningStepsFactory(configuration,
+                        packages.toArray(new String[packages.size()]))
+                        .matchingNames(matchingNames).notMatchingNames(notMatchingNames);
+            }
         } else {
             annotationMonitor.annotationNotFound(UsingSteps.class, annotatedClass);
         }
@@ -192,20 +196,20 @@ public class AnnotationBuilder {
         boolean failOnStoryTimeout = control(finder, "failOnStoryTimeout");
         int threads = finder.getAnnotatedValue(UsingEmbedder.class, Integer.class, "threads");
         Embedder embedder = embedder();
-		EmbedderControls embedderControls = embedder.embedderControls();
-		embedderControls.doBatch(batch).doSkip(skip).doGenerateViewAfterStories(generateViewAfterStories)
+        EmbedderControls embedderControls = embedder.embedderControls();
+        embedderControls.doBatch(batch).doSkip(skip).doGenerateViewAfterStories(generateViewAfterStories)
                 .doIgnoreFailureInStories(ignoreFailureInStories).doIgnoreFailureInView(ignoreFailureInView)
                 .doVerboseFailures(verboseFailures).doVerboseFiltering(verboseFiltering)
                 .doFailOnStoryTimeout(failOnStoryTimeout).useThreads(threads);
-		if ( storyTimeoutInSecs != 0 ){
-			embedderControls.useStoryTimeoutInSecs(storyTimeoutInSecs);
-		}
-		if ( StringUtils.isNotBlank(storyTimeoutInSecsByPath) ){
-			embedderControls.useStoryTimeoutInSecsByPath(storyTimeoutInSecsByPath);
-		}
-		if ( StringUtils.isNotBlank(storyTimeouts) ){
-			embedderControls.useStoryTimeouts(storyTimeouts);
-		}
+        if ( storyTimeoutInSecs != 0 ){
+            embedderControls.useStoryTimeoutInSecs(storyTimeoutInSecs);
+        }
+        if ( StringUtils.isNotBlank(storyTimeoutInSecsByPath) ){
+            embedderControls.useStoryTimeoutInSecsByPath(storyTimeoutInSecsByPath);
+        }
+        if ( StringUtils.isNotBlank(storyTimeouts) ){
+            embedderControls.useStoryTimeouts(storyTimeouts);
+        }
         Configuration configuration = buildConfiguration();
         embedder.useConfiguration(configuration);
         boolean useStepsFactory = finder.getAnnotatedValue(UsingEmbedder.class, Boolean.class, "stepsFactory");
@@ -233,16 +237,16 @@ public class AnnotationBuilder {
     }
     
     protected Embedder defaultEmbedder() {
-    	return new Embedder();
+        return new Embedder();
     }
 
     public AnnotationFinder finder() {
-    	return finder;
+        return finder;
     }
     
     public List<String> findPaths() {
         if (!finder.isAnnotationPresent(UsingPaths.class)) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
 
         String searchIn = finder.getAnnotatedValue(UsingPaths.class, String.class, "searchIn");
@@ -266,7 +270,7 @@ public class AnnotationBuilder {
     }
 
     @SuppressWarnings("unchecked")
-	protected <T> Class<T> elementImplementation(AnnotationFinder finder, String name) {
+    protected <T> Class<T> elementImplementation(AnnotationFinder finder, String name) {
         return finder.getAnnotatedValue(Configure.class, Class.class, name);
     }
 
@@ -280,37 +284,38 @@ public class AnnotationBuilder {
         return properties;
     }
 
-    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder) {
-        List<ParameterConverter> converters = new ArrayList<ParameterConverter>();
+    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder,
+            ResourceLoader resourceLoader, TableTransformers tableTransformers) {
+        ParameterConverters parameterConverters = new ParameterConverters(resourceLoader, tableTransformers);
         for (Class<ParameterConverter> converterClass : annotationFinder.getAnnotatedClasses(Configure.class,
                 ParameterConverter.class, "parameterConverters")) {
-            converters.add(instanceOf(ParameterConverter.class, converterClass));
+            parameterConverters.addConverters(instanceOf(ParameterConverter.class, converterClass));
         }
-        return new ParameterConverters().addConverters(converters);
+        return parameterConverters;
     }
 
     protected <T, V extends T> T instanceOf(Class<T> type, Class<V> ofClass) {
-    	try { 
-    	    // by classloader constructor
-    		try {
-    			Constructor<V> constructor =
-    					ofClass.getConstructor(new Class<?>[]{ClassLoader.class});
-    			return constructor.newInstance(annotatedClass.getClassLoader());
-    		}
-    		catch(NoSuchMethodException ns){
-    		}
-    		// by class constructor
-    		try {
-    			Constructor<V> constructor =
-    					ofClass.getConstructor(new Class<?>[]{Class.class});
-    			return constructor.newInstance(annotatedClass);
-    		}
-    		catch(NoSuchMethodException ns){
-    		}    	     	
-    		// by class instance
+        try { 
+            // by classloader constructor
+            try {
+                Constructor<V> constructor =
+                        ofClass.getConstructor(ClassLoader.class);
+                return constructor.newInstance(annotatedClass.getClassLoader());
+            }
+            catch(NoSuchMethodException ns){
+            }
+            // by class constructor
+            try {
+                Constructor<V> constructor =
+                        ofClass.getConstructor(Class.class);
+                return constructor.newInstance(annotatedClass);
+            }
+            catch(NoSuchMethodException ns){
+            }                 
+            // by class instance
             return ofClass.newInstance();
-    	}
-    	catch (Exception e) {
+        }
+        catch (Exception e) {
             annotationMonitor.elementCreationFailed(ofClass, e);
             throw new InstantiationFailed(ofClass, type, e);
         }

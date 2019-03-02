@@ -3,15 +3,22 @@ package org.jbehave.core.steps;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.annotations.AfterScenario.Outcome;
+import org.jbehave.core.annotations.AsParameters;
+import org.jbehave.core.annotations.ToContext;
+import org.jbehave.core.annotations.FromContext;
 import org.jbehave.core.annotations.Named;
 import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.failures.BeforeOrAfterFailed;
@@ -22,11 +29,14 @@ import org.jbehave.core.model.ExamplesTable;
 import org.jbehave.core.model.Meta;
 import org.jbehave.core.parsers.StepMatcher;
 import org.jbehave.core.reporters.StoryReporter;
+import org.jbehave.core.steps.ParameterConverters.ParameterConverter;
 
 import com.thoughtworks.paranamer.NullParanamer;
 import com.thoughtworks.paranamer.Paranamer;
+import org.jbehave.core.steps.context.StepsContext;
 
 import static java.util.Arrays.asList;
+import static org.jbehave.core.steps.AbstractStepResult.comment;
 import static org.jbehave.core.steps.AbstractStepResult.failed;
 import static org.jbehave.core.steps.AbstractStepResult.ignorable;
 import static org.jbehave.core.steps.AbstractStepResult.notPerformed;
@@ -37,36 +47,38 @@ import static org.jbehave.core.steps.AbstractStepResult.successful;
 
 public class StepCreator {
 
-	public static final String PARAMETER_TABLE_START = "\uff3b";
+    public static final String PARAMETER_TABLE_START = "\uff3b";
     public static final String PARAMETER_TABLE_END = "\uff3d";
     public static final String PARAMETER_VALUE_START = "\uFF5F";
     public static final String PARAMETER_VALUE_END = "\uFF60";
     public static final String PARAMETER_VALUE_NEWLINE = "\u2424";
     public static final UUIDExceptionWrapper NO_FAILURE = new UUIDExceptionWrapper("no failure");
-	private static final String NEWLINE = "\n";
+    private static final String NEWLINE = "\n";
     private static final String SPACE = " ";
-	private static final String NONE = "";
+    private static final String NONE = "";
     private final Class<?> stepsType;
     private final InjectableStepsFactory stepsFactory;
     private final ParameterConverters parameterConverters;
     private final ParameterControls parameterControls;
     private final Pattern delimitedNamePattern;
     private final StepMatcher stepMatcher;
+    private final StepsContext stepsContext;
     private StepMonitor stepMonitor;
     private Paranamer paranamer = new NullParanamer();
     private boolean dryRun = false;
 
     public StepCreator(Class<?> stepsType, InjectableStepsFactory stepsFactory,
-            ParameterConverters parameterConverters, ParameterControls parameterControls, StepMatcher stepMatcher,
-            StepMonitor stepMonitor) {
+            StepsContext stepsContext, ParameterConverters parameterConverters, ParameterControls parameterControls,
+            StepMatcher stepMatcher, StepMonitor stepMonitor) {
         this.stepsType = stepsType;
         this.stepsFactory = stepsFactory;
+        this.stepsContext = stepsContext;
         this.parameterConverters = parameterConverters;
         this.parameterControls = parameterControls;
         this.stepMatcher = stepMatcher;
         this.stepMonitor = stepMonitor;
         this.delimitedNamePattern = Pattern.compile(parameterControls.nameDelimiterLeft() + "(\\w+?)"
-                + parameterControls.nameDelimiterRight());
+                + parameterControls.nameDelimiterRight(), Pattern.DOTALL);
     }
 
     public void useStepMonitor(StepMonitor stepMonitor) {
@@ -90,27 +102,19 @@ public class StepCreator {
     }
 
     public Step createAfterStepUponOutcome(final Method method, final Outcome outcome, Meta storyAndScenarioMeta) {
-        switch (outcome) {
-        case ANY:
-        default:
-            return new BeforeOrAfterStep(method, storyAndScenarioMeta);
-        case SUCCESS:
-            return new UponSuccessStep(method, storyAndScenarioMeta);
-        case FAILURE:
-            return new UponFailureStep(method, storyAndScenarioMeta);
-        }
+        Step beforeOrAfterStep = createBeforeOrAfterStep(method, storyAndScenarioMeta);
+        return wrapStepUponOutcome(outcome, beforeOrAfterStep);
     }
 
-    public Map<String, String> matchedParameters(final Method method, final String stepAsString,
-            final String stepWithoutStartingWord, final Map<String, String> namedParameters) {
-        Map<String, String> matchedParameters = new HashMap<String, String>(); 
-        if (stepMatcher.find(stepWithoutStartingWord)) { 
+    public Map<String, String> matchedParameters(final Method method, final String stepWithoutStartingWord,
+            final Map<String, String> namedParameters) {
+        Map<String, String> matchedParameters = new HashMap<>();
+        if (stepMatcher.find(stepWithoutStartingWord)) {
             // we've found a match, populate map
             ParameterName[] parameterNames = parameterNames(method);
-            Type[] types = method.getGenericParameterTypes();
+            Type[] types = parameterTypes(method, parameterNames);
+
             String[] values = parameterValuesForStep(namedParameters, types, parameterNames);
-    
-            
             for (int i = 0; i < parameterNames.length; i++) {
                 String name = parameterNames[i].name;
                 if (name == null) {
@@ -132,24 +136,41 @@ public class StepCreator {
      * @return The array of {@link ParameterName}s
      */
     private ParameterName[] parameterNames(Method method) {
-        String[] annotatedNames = annotatedParameterNames(method);
-        String[] paranamerNames = paranamerParameterNames(method);
+        ParameterName[] parameterNames;
+        if (method != null) {
+            String[] annotatedNames = annotatedParameterNames(method);
+            String[] paranamerNames = paranamerParameterNames(method);
+            String[] contextNames = contextParameterNames(method);
 
-        ParameterName[] parameterNames = new ParameterName[annotatedNames.length];
-        for (int i = 0; i < annotatedNames.length; i++) {
-            parameterNames[i] = parameterName(annotatedNames, paranamerNames, i);
+            parameterNames = new ParameterName[annotatedNames.length];
+            for (int i = 0; i < annotatedNames.length; i++) {
+                parameterNames[i] = parameterName(annotatedNames, paranamerNames, contextNames, i);
+            }
+        } else {
+            String[] stepMatcherParameterNames = stepMatcher.parameterNames();
+            parameterNames = new ParameterName[stepMatcherParameterNames.length];
+            for (int i = 0; i < stepMatcherParameterNames.length; i++) {
+                parameterNames[i] = new ParameterName(stepMatcherParameterNames[i], false, false);
+            }
         }
         return parameterNames;
     }
 
-    private ParameterName parameterName(String[] annotatedNames, String[] paranamerNames, int i) {
-        String name = annotatedNames[i];
+    private ParameterName parameterName(String[] annotatedNames, String[] paranamerNames, String[] contextNames, int i) {
         boolean annotated = true;
-        if (name == null) {
-            name = (paranamerNames.length > i ? paranamerNames[i] : null);
-            annotated = false;
+        boolean fromContext = false;
+
+        String name = contextNames[i];
+        if (name != null) {
+            fromContext = true;
+        } else {
+            name = annotatedNames[i];
+            if (name == null) {
+                name = (paranamerNames.length > i ? paranamerNames[i] : null);
+                annotated = false;
+            }
         }
-        return new ParameterName(name, annotated);
+        return new ParameterName(name, annotated, fromContext);
     }
 
     /**
@@ -165,6 +186,24 @@ public class StepCreator {
         for (int i = 0; i < parameterAnnotations.length; i++) {
             for (Annotation annotation : parameterAnnotations[i]) {
                 names[i] = annotationName(annotation);
+            }
+        }
+        return names;
+    }
+    
+    /**
+     * Extract parameter names using {@link FromContext}-annotated parameters
+     * 
+     * @param method the Method with {@link FromContext}-annotated parameters
+     * @return An array of annotated parameter names, which <b>may</b> include
+     *         <code>null</code> values for parameters that are not annotated
+     */
+    private String[] contextParameterNames(Method method) {
+        Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+        String[] names = new String[parameterAnnotations.length];
+        for (int i = 0; i < parameterAnnotations.length; i++) {
+            for (Annotation annotation : parameterAnnotations[i]) {
+                names[i] = contextName(annotation);
             }
         }
         return names;
@@ -189,6 +228,21 @@ public class StepCreator {
     }
 
     /**
+     * Returns the value of the annotation {@link FromContext}.
+     * 
+     * @param annotation the Annotation
+     * @return The annotated value or <code>null</code> if no annotation is
+     *         found
+     */
+    private String contextName(Annotation annotation) {
+        if (annotation.annotationType().isAssignableFrom(FromContext.class)) {
+            return ((FromContext) annotation).value();
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Extract parameter names using
      * {@link Paranamer#lookupParameterNames(AccessibleObject, boolean)}
      * 
@@ -199,6 +253,17 @@ public class StepCreator {
         return paranamer.lookupParameterNames(method, false);
     }
 
+    private Type[] parameterTypes(Method method, ParameterName[] parameterNames) {
+        if (method != null) {
+            return method.getGenericParameterTypes();
+        }
+        Type[] types = new Type[parameterNames.length];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = String.class;
+        }
+        return types;
+    }
+
     public Step createParametrisedStep(final Method method, final String stepAsString,
             final String stepWithoutStartingWord, final Map<String, String> namedParameters) {
         return new ParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
@@ -206,23 +271,28 @@ public class StepCreator {
 
     public Step createParametrisedStepUponOutcome(final Method method, final String stepAsString,
             final String stepWithoutStartingWord, final Map<String, String> namedParameters, Outcome outcome) {
+        Step parametrisedStep = createParametrisedStep(method, stepAsString, stepWithoutStartingWord, namedParameters);
+        return wrapStepUponOutcome(outcome, parametrisedStep);
+    }
+
+    private Step wrapStepUponOutcome(Outcome outcome, Step step) {
         switch (outcome) {
-        case ANY:
-            return new UponAnyParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
-        case SUCCESS:
-            return new UponSuccessParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
-        case FAILURE:
-            return new UponFailureParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
-        default:
-            return new ParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
+            case ANY:
+                return new UponAnyStep(step);
+            case SUCCESS:
+                return new UponSuccessStep(step);
+            case FAILURE:
+                return new UponFailureStep(step);
+            default:
+                return step;
         }
     }
 
     private String parametrisedStep(String stepAsString, Map<String, String> namedParameters, Type[] types,
-            ParameterName[] names, String[] parameterValues) {
-    	String parametrisedStep = stepAsString;
-    	// mark parameter values that are parsed
-    	boolean hasTable = hasTable(types);
+            String[] parameterValues) {
+        String parametrisedStep = stepAsString;
+        // mark parameter values that are parsed
+        boolean hasTable = hasTable(types);
         for (int position = 0; position < types.length; position++) {
             parametrisedStep = markParsedParameterValue(parametrisedStep, types[position], parameterValues[position], hasTable);
         }
@@ -235,75 +305,121 @@ public class StepCreator {
     }
 
     private boolean hasTable(Type[] types) {
-    	for (Type type : types) {
-			if ( isTable(type) ){
-				return true;
-			}
-		}
-		return false;
-	}
+        for (Type type : types) {
+            if ( isTable(type) ){
+                return true;
+            }
+        }
+        return false;
+    }
 
-	private String markNamedParameterValue(String stepText, Map<String, String> namedParameters, String name) {
+    private String markNamedParameterValue(String stepText, Map<String, String> namedParameters, String name) {
         String value = namedParameter(namedParameters, name);
         if (value != null) {
-			stepText = stepText.replace(delimitedName(name), markedValue(value));
+            return parameterControls.replaceAllDelimitedNames(stepText, name, markedValue(value));
         }
         return stepText;
     }
 
-	private String delimitedName(String name) {
-		return parameterControls.nameDelimiterLeft() + name + parameterControls.nameDelimiterRight();
-	}
-
     private String markParsedParameterValue(String stepText, Type type, String value, boolean hasTable) {
         if (value != null) {
-            if (isTable(type)) {
-                stepText = stepText.replace(value, markedTable(value));
-            } else {
-                // only mark non-empty string as parameter (JBEHAVE-656)            	
-                if (value.trim().length() != 0) {
-                	String markedValue = markedValue(value);
-                	// identify parameter values to mark as padded by spaces to avoid duplicated replacements of overlapping values (JBEHAVE-837)
-                	String leftPad = SPACE;
-                	String rightPad = ( stepText.endsWith(value) ? NONE : SPACE );
-            		stepText = stepText.replace(pad(value, leftPad, rightPad), pad(markedValue, leftPad, rightPad));
+            // only mark non-empty string as parameter (JBEHAVE-656)
+            if (value.trim().length() != 0) {
+                if (isTable(type)) {
+                    return stepText.replace(value, markedTable(value));
                 }
-                if ( !hasTable ){
-                	stepText = stepText.replace(NEWLINE, PARAMETER_VALUE_NEWLINE);
-                }
+                String markedValue = markedValue(value);
+                // identify parameter values to mark as padded by spaces to avoid duplicated replacements of overlapping values (JBEHAVE-837)
+                String leftPad = SPACE;
+                String rightPad = stepText.endsWith(value) ? NONE : SPACE;
+                return stepText.replace(pad(value, leftPad, rightPad), pad(markedValue, leftPad, rightPad));
+            }
+            if (!hasTable){
+                return stepText.replace(NEWLINE, PARAMETER_VALUE_NEWLINE);
             }
         }
         return stepText;
     }
 
-	private String markedTable(String value) {
-		return pad(value, PARAMETER_TABLE_START, PARAMETER_TABLE_END);
-	}
+    private String markedTable(String value) {
+        return pad(value, PARAMETER_TABLE_START, PARAMETER_TABLE_END);
+    }
 
-	private String markedValue(String value) {
-		return pad(value, PARAMETER_VALUE_START, PARAMETER_VALUE_END);
-	}
+    private String markedValue(String value) {
+        return pad(value, PARAMETER_VALUE_START, PARAMETER_VALUE_END);
+    }
 
-	private String pad(String value, String left, String right){
-		return new StringBuilder().append(left).append(value).append(right).toString();
-	}
-	
+    private String pad(String value, String left, String right){
+        return new StringBuilder().append(left).append(value).append(right).toString();
+    }
+
     private boolean isTable(Type type) {
-        return type instanceof Class && ((Class<?>) type).isAssignableFrom(ExamplesTable.class);
+        return isExamplesTable(type) || isExamplesTableParameters(type);
+    }
+
+    private boolean isExamplesTable(Type type) {
+        return type instanceof Class && ExamplesTable.class.isAssignableFrom((Class<?>) type);
+    }
+
+    private boolean isExamplesTableParameters(Type type) {
+        boolean result = false;
+
+        if (type instanceof Class) {
+            ((Class) type).isAnnotationPresent(AsParameters.class);
+        }
+        else if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            result = isExamplesTableParameters(rawClass(parameterizedType)) || isExamplesTableParameters(argumentClass(parameterizedType));
+        }
+
+        return result;
+    }
+
+    private boolean isExamplesTableParameters(Class type) {
+        return type != null && type.isAnnotationPresent(AsParameters.class);
+    }
+
+    private Class<?> rawClass(ParameterizedType type) {
+        Class result = null;
+
+        Type rawType = type.getRawType();
+        if (rawType instanceof Class) {
+            result = (Class) rawType;
+        }
+
+        return result;
+    }
+
+    private Class<?> argumentClass(ParameterizedType type) {
+        Class result = null;
+
+        Type[] typeArguments = type.getActualTypeArguments();
+        if (typeArguments.length > 0) {
+            Type argument = typeArguments[0];
+            if (argument instanceof Class) {
+                result = (Class) argument;
+            }
+        }
+
+        return result;
     }
 
     private String[] parameterValuesForStep(Map<String, String> namedParameters, Type[] types, ParameterName[] names) {
         final String[] parameters = new String[types.length];
         for (int position = 0; position < types.length; position++) {
-        	parameters[position] = parameterForPosition(position, names, namedParameters);
+            parameters[position] = parameterForPosition(position, names, namedParameters);
         }
         return parameters;
     }
 
-    private Object[] convertParameterValues(String[] valuesAsString, Type[] types) {
+    private Object[] convertParameterValues(String[] valuesAsString, Type[] types, ParameterName[] names) {
         final Object[] parameters = new Object[valuesAsString.length];
         for (int position = 0; position < valuesAsString.length; position++) {
-            parameters[position] = parameterConverters.convert(valuesAsString[position], types[position]);
+            if (names[position].fromContext) {
+                parameters[position] = stepsContext.get(valuesAsString[position]);
+            } else {
+                parameters[position] = parameterConverters.convert(valuesAsString[position], types[position]);
+            }
         }
         return parameters;
     }
@@ -315,41 +431,70 @@ public class StepCreator {
         if (namePosition != -1) {
             String name = names[position].name;
             boolean annotated = names[position].annotated;
+            boolean fromContext = names[position].fromContext;
 
-            boolean delimitedNamedParameters = false;
+            List<String> delimitedNames = Collections.emptyList();
 
             if (isGroupName(name)) {
                 parameter = matchedParameter(name);
-                String delimitedName = delimitedNameFor(parameter);
+                delimitedNames = delimitedNameFor(parameter);
 
-                if (delimitedName != null) {
-                    name = delimitedName;
-                    delimitedNamedParameters = true;
-                } else {
+                if (delimitedNames.isEmpty()) {
                     monitorUsingNameForParameter(name, position, annotated);
                 }
             }
 
-            if (delimitedNamedParameters || isTableName(namedParameters, name)) {
-                monitorUsingTableNameForParameter(name, position, annotated);
+            if (!delimitedNames.isEmpty()) {
+                for(String delimitedName : delimitedNames) {
+                    monitorUsingTableNameForParameter(delimitedName, position, annotated);
+                    parameter = parameterControls.replaceAllDelimitedNames(parameter, delimitedName,
+                            namedParameter(namedParameters, delimitedName));
+                }
+            }
+            else if (isTableName(namedParameters, name)) {
                 parameter = namedParameter(namedParameters, name);
+                if (parameter != null) {
+                    monitorUsingTableNameForParameter(name, position, annotated); 
+                }
+            }
+            
+            if (fromContext && parameter == null) {
+                parameter = name;
+                stepMonitor.usingStepsContextParameter(parameter);
             }
 
         }
 
         if (parameter == null) {
+            // This allow parameters to be in different order.
+            position = position - numberOfPreviousFromContext(names, position);
             stepMonitor.usingNaturalOrderForParameter(position);
             parameter = matchedParameter(position);
-            String delimitedName = delimitedNameFor(parameter);
+            List<String> delimitedNames = delimitedNameFor(parameter);
 
-            if (delimitedName != null && isTableName(namedParameters, delimitedName)) {
-                parameter = namedParameter(namedParameters, delimitedName);
+            for(String delimitedName : delimitedNames) {
+                if (isTableName(namedParameters, delimitedName)) {
+                    parameter = parameterControls.replaceAllDelimitedNames(parameter, delimitedName,
+                            namedParameter(namedParameters, delimitedName));
+                }
             }
         }
 
         stepMonitor.foundParameter(parameter, position);
 
         return parameter;
+    }
+    
+    private int numberOfPreviousFromContext(ParameterName[] names, int currentPosition) {
+        int number = 0;
+        
+        for(int i=currentPosition-1; i>=0; i--){
+            if (names[i].fromContext) {
+                number++;
+            }
+        }
+        
+        return number;
     }
 
     private void monitorUsingTableNameForParameter(String name, int position, boolean usingAnnotationNames) {
@@ -368,12 +513,15 @@ public class StepCreator {
         }
     }
 
-    private String delimitedNameFor(String parameter) {
-        if (!parameterControls.delimiterNamedParameters()) {
-            return null;
+    private List<String> delimitedNameFor(String parameter) {
+        List<String> delimitedNames = new ArrayList<>();
+        if (parameterControls.delimiterNamedParameters()) {
+            Matcher matcher = delimitedNamePattern.matcher(parameter);
+            while(matcher.find()) {
+                delimitedNames.add(matcher.group(1));
+            }
         }
-        Matcher matcher = delimitedNamePattern.matcher(parameter);
-        return matcher.matches() ? matcher.group(1) : null;
+        return delimitedNames;
     }
 
     String matchedParameter(String name) {
@@ -403,7 +551,7 @@ public class StepCreator {
         String positionName = names[position].name;
         for (int i = 0; i < names.length; i++) {
             String name = names[i].name;
-            if (name != null && positionName.equals(name)) {
+            if (name != null && name.equals(positionName)) {
                 return i;
             }
         }
@@ -436,6 +584,17 @@ public class StepCreator {
         return new IgnorableStep(stepAsString);
     }
 
+    public static Step createComment(final String stepAsString) {
+        return new Comment(stepAsString);
+    }
+
+    private void storeOutput(Object object, Method method) {
+        ToContext annotation = method.getAnnotation(ToContext.class);
+        if (annotation != null) {
+            stepsContext.put(annotation.value(), object, annotation.retentionLevel());
+        }
+    }
+
     /**
      * This is a different class, because the @Inject jar may not be in the
      * classpath.
@@ -462,15 +621,39 @@ public class StepCreator {
 
     public static abstract class AbstractStep implements Step {
 
-    	public String asString(Keywords keywords) {
-			return toString();
-		}
-    	
+        @Override
+        public String asString(Keywords keywords) {
+            return toString();
+        }
+
         @Override
         public String toString() {
             return ToStringBuilder.reflectionToString(this, ToStringStyle.SIMPLE_STYLE);
         }
 
+    }
+
+    static class DelegatingStep extends AbstractStep {
+        private final Step step;
+
+        DelegatingStep(Step step){
+            this.step = step;
+        }
+
+        @Override
+        public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
+            return step.perform(storyFailureIfItHappened);
+        }
+
+        @Override
+        public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
+            return step.doNotPerform(storyFailureIfItHappened);
+        }
+
+        @Override
+        public String asString(Keywords keywords) {
+            return step.asString(keywords);
+        }
     }
 
     private class BeforeOrAfterStep extends AbstractStep {
@@ -482,20 +665,22 @@ public class StepCreator {
             this.meta = meta;
         }
 
+        @Override
         public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
             ParameterConverters paramConvertersWithExceptionInjector = paramConvertersWithExceptionInjector(storyFailureIfItHappened);
             MethodInvoker methodInvoker = new MethodInvoker(method, paramConvertersWithExceptionInjector, paranamer,
                     meta);
             Timer timer = new Timer().start();
             try {
-                methodInvoker.invoke();
-                return silent(method).withDurationInMillis(timer.stop());
+                Object outputObject = methodInvoker.invoke();
+                storeOutput(outputObject, method);
+                return silent(method).setTimings(timer.stop());
             } catch (InvocationTargetException e) {
                 return failed(method, new UUIDExceptionWrapper(new BeforeOrAfterFailed(method, e.getCause())))
-                        .withDurationInMillis(timer.stop());
+                        .setTimings(timer.stop());
             } catch (Throwable t) {
                 return failed(method, new UUIDExceptionWrapper(new BeforeOrAfterFailed(method, t)))
-                        .withDurationInMillis(timer.stop());
+                        .setTimings(timer.stop());
             }
         }
 
@@ -503,73 +688,77 @@ public class StepCreator {
             return parameterConverters.newInstanceAdding(new UUIDExceptionWrapperInjector(storyFailureIfItHappened));
         }
 
+        @Override
         public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return perform(storyFailureIfItHappened);
         }
 
-        private class UUIDExceptionWrapperInjector implements ParameterConverters.ParameterConverter {
+        private class UUIDExceptionWrapperInjector implements ParameterConverter<UUIDExceptionWrapper>
+        {
             private final UUIDExceptionWrapper storyFailureIfItHappened;
 
             public UUIDExceptionWrapperInjector(UUIDExceptionWrapper storyFailureIfItHappened) {
                 this.storyFailureIfItHappened = storyFailureIfItHappened;
             }
 
+            @Override
             public boolean accept(Type type) {
                 return UUIDExceptionWrapper.class == type;
             }
 
-            public Object convertValue(String value, Type type) {
+            @Override
+            public UUIDExceptionWrapper convertValue(String value, Type type) {
                 return storyFailureIfItHappened;
             }
         }
 
-		public String asString(Keywords keywords) {
-			return method.getName()+";"+meta.asString(keywords);
-		}
+        @Override
+        public String asString(Keywords keywords) {
+            return method.getName()+";"+meta.asString(keywords);
+        }
     }
 
-    public class UponSuccessStep extends AbstractStep {
-        private BeforeOrAfterStep beforeOrAfterStep;
+    class UponAnyStep extends DelegatingStep {
 
-        public UponSuccessStep(Method method, Meta storyAndScenarioMeta) {
-            this.beforeOrAfterStep = new BeforeOrAfterStep(method, storyAndScenarioMeta);
+        UponAnyStep(Step step){
+            super(step);
         }
 
+        @Override
+        public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
+            return perform(storyFailureIfItHappened);
+        }
+    }
+
+    class UponSuccessStep extends DelegatingStep {
+
+        UponSuccessStep(Step step) {
+            super(step);
+        }
+
+        @Override
         public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return skipped();
         }
-
-        public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return beforeOrAfterStep.perform(storyFailureIfItHappened);
-        }
-
-		public String asString(Keywords keywords) {
-			return beforeOrAfterStep.asString(keywords);
-		}
-
     }
 
-    public class UponFailureStep extends AbstractStep {
-        private final BeforeOrAfterStep beforeOrAfterStep;
+    class UponFailureStep extends DelegatingStep {
 
-        public UponFailureStep(Method method, Meta storyAndScenarioMeta) {
-            this.beforeOrAfterStep = new BeforeOrAfterStep(method, storyAndScenarioMeta);
+        UponFailureStep(Step step) {
+            super(step);
         }
 
+        @Override
         public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return beforeOrAfterStep.perform(storyFailureIfItHappened);
+            return super.perform(storyFailureIfItHappened);
         }
 
+        @Override
         public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return skipped();
         }
-
-		public String asString(Keywords keywords) {
-			return beforeOrAfterStep.asString(keywords);
-		}
-    
     }
-    
+
     public class ParametrisedStep extends AbstractStep {
         private Object[] convertedParameters;
         private String parametrisedStep;
@@ -590,16 +779,19 @@ public class StepCreator {
             storyReporter.beforeStep(stepAsString);
         }
 
+        @Override
         public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
             Timer timer = new Timer().start();
             try {
                 parametriseStep();
                 stepMonitor.performing(parametrisedStep, dryRun);
-                if (!dryRun) {
-                    method.invoke(stepsInstance(), convertedParameters);
+                stepMonitor.beforePerforming(parametrisedStep, dryRun, method);
+                if (!dryRun && method != null) {
+                    Object outputObject = method.invoke(stepsInstance(), convertedParameters);
+                    storeOutput(outputObject, method);
                 }
                 return successful(stepAsString).withParameterValues(parametrisedStep)
-                        .withDurationInMillis(timer.stop());
+                        .setTimings(timer.stop());
             } catch (ParameterNotFound e) {
                 // step parametrisation failed, return pending StepResult
                 return pending(stepAsString).withParameterValues(parametrisedStep);
@@ -615,13 +807,17 @@ public class StepCreator {
                     failureCause = failureCause.getCause();
                 }
                 return failed(stepAsString, new UUIDExceptionWrapper(stepAsString, failureCause)).withParameterValues(
-                        parametrisedStep).withDurationInMillis(timer.stop());
+                        parametrisedStep).setTimings(timer.stop());
             } catch (Throwable t) {
                 return failed(stepAsString, new UUIDExceptionWrapper(stepAsString, t)).withParameterValues(
-                        parametrisedStep).withDurationInMillis(timer.stop());
+                        parametrisedStep).setTimings(timer.stop());
+            }
+            finally {
+                stepMonitor.afterPerforming(parametrisedStep, dryRun, method);
             }
         }
 
+        @Override
         public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
             try {
                 parametriseStep();
@@ -632,21 +828,22 @@ public class StepCreator {
             return notPerformed(stepAsString).withParameterValues(parametrisedStep);
         }
 
-		public String asString(Keywords keywords) {
-			if ( parametrisedStep == null){
-				parametriseStep();
-			}
-        	return parametrisedStep;
+        @Override
+        public String asString(Keywords keywords) {
+            if ( parametrisedStep == null){
+                parametriseStep();
+            }
+            return parametrisedStep;
         }
         
         private void parametriseStep() {
             stepMatcher.find(stepWithoutStartingWord);
             ParameterName[] names = parameterNames(method);
-            Type[] types = method.getGenericParameterTypes();
+            Type[] types = parameterTypes(method, names);
             String[] parameterValues = parameterValuesForStep(namedParameters, types, names);
-            convertedParameters = convertParameterValues(parameterValues, types);
+            convertedParameters = convertParameterValues(parameterValues, types, names);
             addNamedParametersToExamplesTables();
-            parametrisedStep = parametrisedStep(stepAsString, namedParameters, types, names, parameterValues);
+            parametrisedStep = parametrisedStep(stepAsString, namedParameters, types, parameterValues);
         }
 
         private void addNamedParametersToExamplesTables() {
@@ -656,73 +853,6 @@ public class StepCreator {
                 }
             }
         }
-
-    }
-
-    public class UponAnyParametrisedStep extends AbstractStep {
-        private ParametrisedStep parametrisedStep;
-
-        public UponAnyParametrisedStep(String stepAsString, Method method, String stepWithoutStartingWord,
-                Map<String, String> namedParameters){
-            this.parametrisedStep = new ParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
-        }
-
-        public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return perform(storyFailureIfItHappened);
-        }
-
-        public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return parametrisedStep.perform(storyFailureIfItHappened);
-        }
-
-		public String asString(Keywords keywords) {
-			return parametrisedStep.asString(keywords);
-		}
-
-    }
-
-    public class UponSuccessParametrisedStep extends AbstractStep {
-        private ParametrisedStep parametrisedStep;
-
-        public UponSuccessParametrisedStep(String stepAsString, Method method, String stepWithoutStartingWord,
-                Map<String, String> namedParameters){
-            this.parametrisedStep = new ParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
-        }
-
-        public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return skipped();
-        }
-
-        public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return parametrisedStep.perform(storyFailureIfItHappened);
-        }
-
-		public String asString(Keywords keywords) {
-			return parametrisedStep.asString(keywords);
-		}
-
-    }
-
-    public class UponFailureParametrisedStep extends AbstractStep {
-        private ParametrisedStep parametrisedStep;
-
-        public UponFailureParametrisedStep(String stepAsString, Method method, String stepWithoutStartingWord,
-                Map<String, String> namedParameters){
-            this.parametrisedStep = new ParametrisedStep(stepAsString, method, stepWithoutStartingWord, namedParameters);
-        }
-
-        public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return parametrisedStep.perform(storyFailureIfItHappened);
-        }
-
-        public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
-            return skipped();
-        }
-
-		public String asString(Keywords keywords) {
-			return parametrisedStep.asString(keywords);
-		}
-    
     }
 
     public static class PendingStep extends AbstractStep {
@@ -735,10 +865,12 @@ public class StepCreator {
             this.previousNonAndStep = previousNonAndStep;
         }
 
+        @Override
         public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return pending(stepAsString);
         }
 
+        @Override
         public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return pending(stepAsString);
         }
@@ -759,9 +891,10 @@ public class StepCreator {
             return method != null;
         }
 
-		public String asString(Keywords keywords) {
-			return stepAsString;
-		}
+        @Override
+        public String asString(Keywords keywords) {
+            return stepAsString;
+        }
 
     }
 
@@ -772,18 +905,43 @@ public class StepCreator {
             this.stepAsString = stepAsString;
         }
 
+        @Override
         public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return ignorable(stepAsString);
         }
 
+        @Override
         public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
             return ignorable(stepAsString);
         }
         
-		public String asString(Keywords keywords) {
-			return stepAsString;
-		}
+        @Override
+        public String asString(Keywords keywords) {
+            return stepAsString;
+        }
+    }
 
+    public static class Comment extends AbstractStep {
+        private final String stepAsString;
+
+        public Comment(String stepAsString) {
+            this.stepAsString = stepAsString;
+        }
+
+        @Override
+        public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
+            return comment(stepAsString);
+        }
+
+        @Override
+        public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
+            return comment(stepAsString);
+        }
+
+        @Override
+        public String asString(Keywords keywords) {
+            return stepAsString;
+        }
     }
 
     private class MethodInvoker {
@@ -801,8 +959,8 @@ public class StepCreator {
             this.parameterTypes = method.getGenericParameterTypes();
         }
 
-        public void invoke() throws InvocationTargetException, IllegalAccessException {
-            method.invoke(stepsInstance(), parameterValuesFrom(meta));
+        public Object invoke() throws InvocationTargetException, IllegalAccessException {
+            return method.invoke(stepsInstance(), parameterValuesFrom(meta));
         }
 
         private Parameter[] methodParameters() {
@@ -836,7 +994,7 @@ public class StepCreator {
         private Object[] parameterValuesFrom(Meta meta) {
             Object[] values = new Object[parameterTypes.length];
             for (Parameter parameter : methodParameters()) {
-            	values[parameter.position] = parameterConverters.convert(parameter.valueFrom(meta), parameter.type);
+                values[parameter.position] = parameterConverters.convert(parameter.valueFrom(meta), parameter.type);
             }
             return values;
         }
@@ -864,11 +1022,12 @@ public class StepCreator {
     private static class ParameterName {
         private String name;
         private boolean annotated;
+        private boolean fromContext;
 
-        private ParameterName(String name, boolean annotated) {
+        private ParameterName(String name, boolean annotated, boolean fromContext) {
             this.name = name;
             this.annotated = annotated;
+            this.fromContext = fromContext;
         }
     }
-
 }

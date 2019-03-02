@@ -1,7 +1,7 @@
 package org.jbehave.core.embedder;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * Holds values used by the Embedder to control execution flow.
@@ -57,6 +57,7 @@ public class EmbedderControls {
     /**
      * @deprecated use {@link #storyTimeouts()}
      */
+    @Deprecated
     public long storyTimeoutInSecs() {
     	try {
     		return Long.parseLong(storyTimeouts);
@@ -68,6 +69,7 @@ public class EmbedderControls {
     /**
      * @deprecated use {@link #storyTimeouts()}
      */
+    @Deprecated
     public String storyTimeoutInSecsByPath() {
         return storyTimeouts();
     }
@@ -123,6 +125,7 @@ public class EmbedderControls {
     /**
      * @deprecated use {@link #useStoryTimeouts(String)}
      */
+    @Deprecated
     public EmbedderControls useStoryTimeoutInSecs(long storyTimeoutInSecs) {
     	useStoryTimeouts(Long.toString(storyTimeoutInSecs));
         return this;
@@ -131,6 +134,7 @@ public class EmbedderControls {
     /**
      * @deprecated use {@link #useStoryTimeouts(String)}
      */
+    @Deprecated
     public EmbedderControls useStoryTimeoutInSecsByPath(String storyTimeoutInSecsByPath) {
     	useStoryTimeouts(storyTimeoutInSecsByPath);
         return this;

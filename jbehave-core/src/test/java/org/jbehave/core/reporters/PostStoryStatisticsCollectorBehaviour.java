@@ -30,7 +30,7 @@ public class PostStoryStatisticsCollectorBehaviour {
     private PostStoryStatisticsCollector reporter;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         out = new ByteArrayOutputStream();
         printStream = new PrintStream(out);
         reporter = new PostStoryStatisticsCollector(printStream);
@@ -54,10 +54,11 @@ public class PostStoryStatisticsCollectorBehaviour {
         assertThat(statistics, containsString("givenStoryScenariosPending=1"));
         assertThat(statistics, containsString("givenStoryScenariosFailed=0"));
 
-        assertThat(statistics, containsString("steps=9"));
+        assertThat(statistics, containsString("steps=10"));
         assertThat(statistics, containsString("stepsFailed=1"));
         assertThat(statistics, containsString("stepsPending=1"));
         assertThat(statistics, containsString("stepsIgnorable=1"));
+        assertThat(statistics, containsString("comments=1"));
         assertThat(statistics, containsString("stepsNotPerformed=2"));
         assertThat(statistics, containsString("stepsSuccessful=4"));
 
@@ -116,23 +117,22 @@ public class PostStoryStatisticsCollectorBehaviour {
         reporter.beforeStory(story, false);
 
         // 1st scenario
-        reporter.beforeScenario("I ask for a loan");
-        reporter.scenarioMeta(Meta.EMPTY);
+        reporter.beforeScenario(new Scenario("I ask for a loan", Meta.EMPTY));
         reporter.givenStories(asList("path/to/story1", "path/to/story2"));
 
         // 1st given story
         reporter.beforeStory(story, true);
-        reporter.beforeScenario("a scenario without steps");
+        reporter.beforeScenario(new Scenario("a scenario without steps", Meta.EMPTY));
         reporter.afterScenario();
         reporter.afterStory(true);
 
         // 2nd given story
         reporter.beforeStory(story, true);
-        reporter.beforeScenario("the bank has $300 to loan");
+        reporter.beforeScenario(new Scenario("the bank has $300 to loan", Meta.EMPTY));
         reporter.givenStories(asList("path/to/nested/story1"));
 
         reporter.beforeStory(story, true);
-        reporter.beforeScenario("initialise static");
+        reporter.beforeScenario(new Scenario("initialise static", Meta.EMPTY));
         reporter.successful("the bank has customers");
         reporter.afterScenario();
         reporter.afterStory(true);
@@ -141,13 +141,14 @@ public class PostStoryStatisticsCollectorBehaviour {
         reporter.afterStory(true);
 
         reporter.successful("Given I have a balance of $50");
-        reporter.ignorable("!-- A comment");
+        reporter.ignorable("!-- Then ignore me");
+        reporter.comment("!-- A comment");
         reporter.successful("When I request $20");
         reporter.successful("When I ask Liz for a loan of $100");
         reporter.afterScenario();
 
         // 2nd scenario
-        reporter.beforeScenario("A failing scenario");
+        reporter.beforeScenario(new Scenario("A failing scenario", Meta.EMPTY));
         OutcomesTable outcomesTable = new OutcomesTable();
         outcomesTable.addOutcome("I don't return all", 100.0, equalTo(50.));
         try {
@@ -158,13 +159,13 @@ public class PostStoryStatisticsCollectorBehaviour {
         reporter.notPerformed("Then I should have $20");
         ExamplesTable table = new ExamplesTable("|money|to|\n|$30|Mauro|\n|$50|Paul|\n");
         reporter.beforeExamples(asList("Given money <money>", "Then I give it to <to>"), table);
-        reporter.example(table.getRow(0));
-        reporter.example(table.getRow(1));
+        reporter.example(table.getRow(0), 0);
+        reporter.example(table.getRow(1), 1);
         reporter.afterExamples();
         reporter.afterScenario();
 
         // 3rd scenario
-        reporter.beforeScenario("A pending scenario");
+        reporter.beforeScenario(new Scenario("A pending scenario", Meta.EMPTY));
         reporter.pending("When I have some money");
         reporter.notPerformed("Then I should have $20");
         reporter.afterScenario();        

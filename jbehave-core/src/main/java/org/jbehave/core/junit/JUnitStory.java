@@ -15,8 +15,9 @@ import static java.util.Arrays.asList;
  */
 public abstract class JUnitStory extends ConfigurableEmbedder {
     
-	@Test
-    public void run() throws Throwable {        
+	@Override
+    @Test
+    public void run() {
         Embedder embedder = configuredEmbedder();
         StoryPathResolver pathResolver = embedder.configuration().storyPathResolver();
         String storyPath = pathResolver.resolve(this.getClass());
@@ -24,6 +25,7 @@ public abstract class JUnitStory extends ConfigurableEmbedder {
             embedder.runStoriesAsPaths(asList(storyPath));
         } finally {
             embedder.generateCrossReference();
+            embedder.generateSurefireReport();
         }
     }
 

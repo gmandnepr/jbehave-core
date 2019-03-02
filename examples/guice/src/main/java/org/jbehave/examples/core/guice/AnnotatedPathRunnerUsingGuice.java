@@ -12,8 +12,6 @@ import org.jbehave.core.io.CodeLocations;
 import org.jbehave.core.io.LoadFromClasspath;
 import org.jbehave.core.io.StoryLoader;
 import org.jbehave.core.junit.guice.GuiceAnnotatedPathRunner;
-import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
-import org.jbehave.core.parsers.StepPatternParser;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.ParameterConverters.DateConverter;
 import org.jbehave.core.steps.ParameterConverters.ParameterConverter;
@@ -55,7 +53,6 @@ public class AnnotatedPathRunnerUsingGuice {
         protected void configure() {
             bind(StoryControls.class)
                     .toInstance(new StoryControls().doDryRun(false).doSkipScenariosAfterFailure(false));
-            bind(StepPatternParser.class).toInstance(new RegexPrefixCapturingPatternParser("%"));
             bind(StoryLoader.class).toInstance(new LoadFromClasspath(this.getClass().getClassLoader()));
             bind(ParameterConverter.class).toInstance(new DateConverter(new SimpleDateFormat("yyyy-MM-dd")));
             bind(StoryReporterBuilder.class).toInstance(

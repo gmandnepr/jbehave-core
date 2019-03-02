@@ -3,7 +3,6 @@ package org.jbehave.core.junit.needle;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -41,10 +40,11 @@ public class NeedleAnnotatedEmbedderRunnerBehaviour {
 	@UsingNeedle
 	public static class RunningWithAnnotatedEmbedderRunner extends InjectableEmbedder {
 
-		@Test
+		@Override
+        @Test
 		public void run() {
-			assertTrue(true);
-		}
+            assertThat(true, is(true));
+        }
 
 		@Test
 		public void testSteps() {

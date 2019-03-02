@@ -14,8 +14,9 @@ import org.picocontainer.behaviors.Caching;
 import org.picocontainer.injectors.AbstractInjector;
 import org.picocontainer.injectors.ConstructorInjection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class PicoStepsFactoryBehaviour {
 
@@ -24,7 +25,7 @@ public class PicoStepsFactoryBehaviour {
     }
 
     @Test
-    public void assertThatStepsCanBeCreated() throws NoSuchFieldException, IllegalAccessException {
+    public void assertThatStepsCanBeCreated() {
         // Given
         MutablePicoContainer parent = createPicoContainer();
         parent.as(Characteristics.USE_NAMES).addComponent(FooSteps.class);
@@ -37,7 +38,7 @@ public class PicoStepsFactoryBehaviour {
 
 
     @Test
-    public void assertThatStepsWithStepsWithDependencyCanBeCreated() throws NoSuchFieldException, IllegalAccessException {
+    public void assertThatStepsWithStepsWithDependencyCanBeCreated() {
         MutablePicoContainer parent = createPicoContainer();
         parent.as(Characteristics.USE_NAMES).addComponent(FooStepsWithDependency.class);
         parent.addComponent(Integer.class, 42);
@@ -46,14 +47,16 @@ public class PicoStepsFactoryBehaviour {
         List<CandidateSteps> steps = factory.createCandidateSteps();
         // Then
         assertFooStepsFound(steps);
-        assertEquals(42, (int) ((FooStepsWithDependency) stepsInstance(steps.get(0))).integer);
+        assertThat(((FooStepsWithDependency) stepsInstance(steps.get(0))).integer, equalTo(42));
     }
 
-    private void assertFooStepsFound(List<CandidateSteps> steps) throws NoSuchFieldException, IllegalAccessException {
-        assertEquals(1, steps.size());
-        assertTrue(steps.get(0) instanceof CandidateSteps);
+    private void assertFooStepsFound(List<CandidateSteps> steps) {
+        assertThat(steps.size(), equalTo(1));
+        boolean actual1 = steps.get(0) instanceof CandidateSteps;
+        assertThat(actual1, is(true));
         Object instance = stepsInstance(steps.get(0));
-        assertTrue(instance instanceof FooSteps);
+        boolean actual = instance instanceof FooSteps;
+        assertThat(actual, is(true));
     }
 
     private Object stepsInstance(CandidateSteps candidateSteps) {
@@ -61,7 +64,7 @@ public class PicoStepsFactoryBehaviour {
     }
 
     @Test(expected=AbstractInjector.UnsatisfiableDependenciesException.class)
-    public void assertThatStepsWithMissingDependenciesCannotBeCreated() throws NoSuchFieldException, IllegalAccessException {
+    public void assertThatStepsWithMissingDependenciesCannotBeCreated() {
         MutablePicoContainer parent = createPicoContainer();
         parent.as(Characteristics.USE_NAMES).addComponent(FooStepsWithDependency.class);
         PicoStepsFactory factory = new PicoStepsFactory(new MostUsefulConfiguration(), parent);

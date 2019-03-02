@@ -4,17 +4,17 @@
   <parent>
     <groupId>org.jbehave</groupId>
     <artifactId>jbehave-examples</artifactId>
-    <version>4.1-SNAPSHOT</version>
+    <version>4.5-SNAPSHOT</version>
   </parent>
   <artifactId>jbehave-core-example</artifactId>
   <name>JBehave Core Example</name>
 
   <properties>
     <embeddables>**/CoreStories.java</embeddables>
-    <meta.filter></meta.filter>
+    <meta.filter>-skip</meta.filter>
     <threads>2</threads>
     <ignore.failure.in.stories>true</ignore.failure.in.stories>
-    <ignore.failure.in.view>true</ignore.failure.in.view>
+    <ignore.failure.in.view>false</ignore.failure.in.view>
   </properties>
 
   <build>
@@ -58,5 +58,14 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>failing</id>
+      <properties>
+        <embeddables>**/FailingCoreStories.java</embeddables>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>

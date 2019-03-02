@@ -2,35 +2,44 @@ package org.jbehave.example.spring.security.dao;
 
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.hibernate.SessionFactory;
 import org.jbehave.example.spring.security.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.stereotype.Repository;
 
 
 @Repository("userDao")
-public class UserDaoImpl extends HibernateDaoSupport implements UserDao {
+public class UserDaoImpl implements UserDao {
 
   @Autowired
-  public UserDaoImpl(SessionFactory sessionFactory) {
-    setSessionFactory(sessionFactory);
-  }
+  private SessionFactory sessionFactory;
 
+  @Override
+  @Transactional
   public User load(Long id) {
-    return (User) getHibernateTemplate().load(User.class, id);
+    return (User) sessionFactory.getCurrentSession().load(User.class, id);
   }
 
+  @Override
+  @Transactional
   public User persist(User user) {
-    getHibernateTemplate().saveOrUpdate(user);
+    sessionFactory.getCurrentSession().saveOrUpdate(user);
     return user;
   }
 
+  @Override
   @SuppressWarnings("unchecked")
+  @Transactional
   public User findUserByOrganizationAndUsername(Long organizationId, String username) {
-    List<User> query = getHibernateTemplate().find("from User where organization.id = ? and username = ?", new Object[] { organizationId, username });
+    List<User> query = sessionFactory.getCurrentSession()
+            .createQuery("from User where organization.id = ? and username = ?")
+            .setParameter(0, organizationId)
+            .setParameter(1, username)
+            .list();
     if (query.size() == 1) {
-      return (User) query.get(0);
+      return query.get(0);
     }
     return null;
   }

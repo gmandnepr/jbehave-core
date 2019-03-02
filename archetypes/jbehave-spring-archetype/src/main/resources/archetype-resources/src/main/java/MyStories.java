@@ -16,12 +16,14 @@ import org.jbehave.core.io.LoadFromClasspath;
 import org.jbehave.core.io.StoryFinder;
 import org.jbehave.core.junit.JUnitStories;
 import org.jbehave.core.model.ExamplesTableFactory;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
 import org.jbehave.core.parsers.RegexStoryParser;
 import org.jbehave.core.reporters.CrossReference;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.InstanceStepsFactory;
+import org.jbehave.core.steps.ParameterControls;
 import org.jbehave.core.steps.ParameterConverters;
 import org.jbehave.core.steps.ParameterConverters.DateConverter;
 import org.jbehave.core.steps.ParameterConverters.ExamplesTableConverter;
@@ -55,10 +57,14 @@ public class MyStories extends JUnitStories {
     @Override
     public Configuration configuration() {
         Class<? extends Embeddable> embeddableClass = this.getClass();
+        LoadFromClasspath resourceLoader = new LoadFromClasspath(embeddableClass);
+        TableTransformers tableTransformers = new TableTransformers();
+        ParameterControls parameterControls = new ParameterControls();
         // Start from default ParameterConverters instance
-        ParameterConverters parameterConverters = new ParameterConverters();
+        ParameterConverters parameterConverters = new ParameterConverters(resourceLoader, tableTransformers);
         // factory to allow parameter conversion and loading from external resources (used by StoryParser too)
-        ExamplesTableFactory examplesTableFactory = new ExamplesTableFactory(new LocalizedKeywords(), new LoadFromClasspath(embeddableClass), parameterConverters);
+        ExamplesTableFactory examplesTableFactory = new ExamplesTableFactory(new LocalizedKeywords(), resourceLoader,
+                parameterConverters, parameterControls, tableTransformers);
         // add custom converters
         parameterConverters.addConverters(new DateConverter(new SimpleDateFormat("yyyy-MM-dd")),
                 new ExamplesTableConverter(examplesTableFactory));
@@ -69,7 +75,9 @@ public class MyStories extends JUnitStories {
                 .withCodeLocation(CodeLocations.codeLocationFromClass(embeddableClass))
                 .withDefaultFormats()
                 .withFormats(CONSOLE, TXT, HTML, XML))
-            .useParameterConverters(parameterConverters);
+            .useParameterConverters(parameterConverters)
+            .useParameterControls(parameterControls)
+            .useTableTransformers(tableTransformers);
     }
 
     @Override
@@ -83,7 +91,5 @@ public class MyStories extends JUnitStories {
     @Override
     protected List<String> storyPaths() {
         return new StoryFinder().findPaths(codeLocationFromClass(this.getClass()), "**/*.story", "**/excluded*.story");
-                
     }
-        
 }

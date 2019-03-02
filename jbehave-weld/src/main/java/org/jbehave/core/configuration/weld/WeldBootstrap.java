@@ -27,8 +27,7 @@ public class WeldBootstrap extends Weld {
 
     @Override
     protected Deployment createDeployment(ResourceLoader resourceLoader, Bootstrap bootstrap) {
-        Deployment deployment = super.createDeployment(resourceLoader, bootstrap);
-        return deployment;
+        return super.createDeployment(resourceLoader, bootstrap);
     }
 
     @Override
@@ -59,7 +58,7 @@ public class WeldBootstrap extends Weld {
         private Map<Class<?>, WeldAnnotationBuilder> builders = null;
 
         public void build() {
-            builders = new HashMap<Class<?>, WeldAnnotationBuilder>();
+            builders = new HashMap<>();
             for (Object o : instances) {
                 Class<?> instanceClass = o.getClass();
                 WeldAnnotationBuilder builder = new WeldAnnotationBuilder(instanceClass, configuration, stepsFactory);

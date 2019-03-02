@@ -1,14 +1,12 @@
 package org.jbehave.core.steps;
 
-import java.io.PrintStream;
-
 /**
  * StepMonitor that prints nothings.
  */
-public class SilentStepMonitor extends PrintStreamStepMonitor {
+public class SilentStepMonitor extends PrintingStepMonitor {
 
-    protected void print(PrintStream output, String message) {
+    @Override
+    protected void print(String format, Object... args) {
         // print nothing
     }
-
 }

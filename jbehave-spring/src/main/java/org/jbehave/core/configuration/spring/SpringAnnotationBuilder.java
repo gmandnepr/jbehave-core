@@ -10,6 +10,8 @@ import org.jbehave.core.configuration.AnnotationFinder;
 import org.jbehave.core.configuration.AnnotationMonitor;
 import org.jbehave.core.configuration.AnnotationRequired;
 import org.jbehave.core.configuration.Configuration;
+import org.jbehave.core.io.ResourceLoader;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.steps.CompositeStepsFactory;
 import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.ParameterConverters;
@@ -69,8 +71,9 @@ public class SpringAnnotationBuilder extends AnnotationBuilder {
     }
 
     @Override
-    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder) {
-        ParameterConverters converters = super.parameterConverters(annotationFinder);
+    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder, ResourceLoader resourceLoader,
+            TableTransformers tableTransformers) {
+        ParameterConverters converters = super.parameterConverters(annotationFinder, resourceLoader, tableTransformers);
         if (context != null) {
             return converters.addConverters(getBeansOfType(context, ParameterConverter.class));
         }
@@ -79,7 +82,7 @@ public class SpringAnnotationBuilder extends AnnotationBuilder {
 
     private List<ParameterConverter> getBeansOfType(ApplicationContext context, Class<ParameterConverter> type) {
         Map<String, ParameterConverter> beansOfType = context.getBeansOfType(type);
-        List<ParameterConverter> converters = new ArrayList<ParameterConverter>();
+        List<ParameterConverter> converters = new ArrayList<>();
         for (ParameterConverter converter : beansOfType.values()) {
             converters.add(converter);
         }

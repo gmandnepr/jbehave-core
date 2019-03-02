@@ -36,9 +36,10 @@ public class IndexFromRedmine extends IndexWithBreadcrumbs {
         super(new RESTClient(Type.JSON, username, password), nameResolver);
     }
 
+    @Override
     protected Map<String, Resource> createIndexFromEntity(String rootURI, String entity) {
     	Collection<Page> pages = parse(entity);
-        Map<String, Resource> index = new HashMap<String, Resource>();
+        Map<String, Resource> index = new HashMap<>();
         for (Page page : pages) {
             String parentName = (page.parent != null ? resolveName(page.parent.title) : null);
             String uri = format(PAGE_URI, rootURI, page.title);
@@ -48,13 +49,14 @@ public class IndexFromRedmine extends IndexWithBreadcrumbs {
         return index;
     }
 
-	protected String uri(String rootPath) {
+	@Override
+    protected String uri(String rootPath) {
 		return format(INDEX_URI, rootPath);
 	}
 
     private Collection<Page> parse(String entity) {
         Gson gson = new Gson();
-        return gson.<Collection<Page>> fromJson(jsonMember(entity, "wiki_pages"),
+        return gson.fromJson(jsonMember(entity, "wiki_pages"),
                 new TypeToken<Collection<Page>>() {
                 }.getType());
     }

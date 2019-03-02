@@ -10,6 +10,8 @@ import org.jbehave.core.configuration.AnnotationMonitor;
 import org.jbehave.core.configuration.AnnotationRequired;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.PrintStreamAnnotationMonitor;
+import org.jbehave.core.io.ResourceLoader;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.steps.CompositeStepsFactory;
 import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.ParameterConverters;
@@ -44,13 +46,14 @@ public class GuiceAnnotationBuilder extends AnnotationBuilder {
         super(annotatedClass, annotationMonitor);
     }
 
+    @Override
     public Configuration buildConfiguration() throws AnnotationRequired {
 
         AnnotationFinder finder = annotationFinder();
         if (finder.isAnnotationPresent(UsingGuice.class)) {
             @SuppressWarnings("rawtypes")
             List<Class> moduleClasses = finder.getAnnotatedValues(UsingGuice.class, Class.class, "modules");
-            List<Module> modules = new ArrayList<Module>();
+            List<Module> modules = new ArrayList<>();
             for (Class<Module> moduleClass : moduleClasses) {
                 try {
                     modules.add(moduleClass.newInstance());
@@ -78,8 +81,9 @@ public class GuiceAnnotationBuilder extends AnnotationBuilder {
     }
 
     @Override
-    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder) {
-        ParameterConverters converters = super.parameterConverters(annotationFinder);
+    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder, ResourceLoader resourceLoader,
+            TableTransformers tableTransformers) {
+        ParameterConverters converters = super.parameterConverters(annotationFinder, resourceLoader, tableTransformers);
         if (injector != null) {
             return converters.addConverters(findConverters(injector));
         }
@@ -101,7 +105,7 @@ public class GuiceAnnotationBuilder extends AnnotationBuilder {
         if (bindingsByType.isEmpty() && injector.getParent() != null) {
             return findConverters(injector.getParent());
         }
-        List<ParameterConverter> converters = new ArrayList<ParameterConverter>();
+        List<ParameterConverter> converters = new ArrayList<>();
         for (Binding<ParameterConverter> binding : bindingsByType) {
             converters.add(binding.getProvider().get());
         }

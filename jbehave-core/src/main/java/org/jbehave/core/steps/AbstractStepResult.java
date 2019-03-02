@@ -2,8 +2,8 @@ package org.jbehave.core.steps;
 
 import java.lang.reflect.Method;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.failures.PendingStepFound;
 import org.jbehave.core.failures.UUIDExceptionWrapper;
 import org.jbehave.core.model.OutcomesTable.OutcomesFailed;
@@ -33,6 +33,7 @@ public abstract class AbstractStepResult implements StepResult {
             super(asString(method), Type.FAILED, throwable);
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             if (throwable.getCause() instanceof OutcomesFailed) {
                 reporter.failedOutcomes(parametrisedStep(), ((OutcomesFailed) throwable.getCause()).outcomesTable());
@@ -48,6 +49,7 @@ public abstract class AbstractStepResult implements StepResult {
             super(Type.NOT_PERFORMED, step);
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             reporter.notPerformed(parametrisedStep());
         }
@@ -62,6 +64,7 @@ public abstract class AbstractStepResult implements StepResult {
             super(step, Type.PENDING, e);
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             reporter.pending(parametrisedStep());
         }
@@ -77,6 +80,7 @@ public abstract class AbstractStepResult implements StepResult {
             super(Type.SUCCESSFUL, asString(method));
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             reporter.successful(parametrisedStep());
         }
@@ -89,6 +93,7 @@ public abstract class AbstractStepResult implements StepResult {
             super(method);
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             // do not report
         }
@@ -99,8 +104,20 @@ public abstract class AbstractStepResult implements StepResult {
             super(Type.IGNORABLE, step);
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             reporter.ignorable(step);
+        }
+    }
+
+    public static class Comment extends AbstractStepResult {
+        public Comment(String step) {
+            super(Type.COMMENT, step);
+        }
+
+        @Override
+        public void describeTo(StoryReporter reporter) {
+            reporter.comment(step);
         }
     }
 
@@ -110,6 +127,7 @@ public abstract class AbstractStepResult implements StepResult {
             super(Type.SKIPPED, "");
         }
 
+        @Override
         public void describeTo(StoryReporter reporter) {
             // do not report
         }
@@ -118,8 +136,8 @@ public abstract class AbstractStepResult implements StepResult {
     protected final String step;
     protected final Type type;
     protected final UUIDExceptionWrapper throwable;
+    private final Timing timing = new Timing();
     private String parametrisedStep;
-    private long durationInMillis;
 
     public AbstractStepResult(Type type, String step) {
         this(step, type, null);
@@ -127,35 +145,39 @@ public abstract class AbstractStepResult implements StepResult {
 
     public AbstractStepResult(String step, Type type, UUIDExceptionWrapper throwable) {
         this.step = step;
-		this.type = type;
+        this.type = type;
         this.throwable = throwable;
     }
 
+    @Override
     public String parametrisedStep() {
         return parametrisedStep != null ? parametrisedStep : step;
     }
 
+    @Override
     public StepResult withParameterValues(String parametrisedStep) {
         this.parametrisedStep = parametrisedStep;
         return this;
     }
 
-    public long durationInMillis(){
-        return durationInMillis;
+    public Timing getTiming(){
+        return timing;
     }
     
-    public StepResult withDurationInMillis(long millis) {
-        this.durationInMillis = millis;
+    @Override
+    public StepResult setTimings(Timer timer) {
+        this.timing.setTimings(timer);
         return this;
     }
     
+    @Override
     public UUIDExceptionWrapper getFailure() {
         return throwable;
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append(parametrisedStep()).append(durationInMillis()).toString();
+        return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append(parametrisedStep()).append(getTiming()).toString();
     }
 
     public static StepResult successful(String step) {
@@ -168,6 +190,10 @@ public abstract class AbstractStepResult implements StepResult {
 
     public static StepResult ignorable(String step) {
         return new Ignorable(step);
+    }
+
+    public static StepResult comment(String step) {
+        return new Comment(step);
     }
 
     public static StepResult pending(String step) {
@@ -215,7 +241,4 @@ public abstract class AbstractStepResult implements StepResult {
         }
         return sb.append(")").toString();
     }
-
-
-
 }

@@ -9,7 +9,7 @@ public class Game {
     private final int width;
     private final int height;
     private GameObserver observer;
-    private Set<Cell> cells = new HashSet<Cell>();
+    private Set<Cell> cells = new HashSet<>();
 
     public Game(int width, int height) {
         this.width = width;
@@ -23,8 +23,11 @@ public class Game {
 
     private void notifyObserver() {
         observer.gridChanged(new Grid() {
+            @Override
             public int getHeight() { return height; }
+            @Override
             public int getWidth() { return width; }
+            @Override
             public boolean hasLife(int column, int row) { return cells.contains(new Cell(column, row)); }
             
         });

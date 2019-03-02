@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Predicate;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -63,6 +63,7 @@ public class UnpackViewResources extends AbstractEmbedderMojo {
      */
     File viewDirectory;
 
+    @Override
     public void execute() throws MojoExecutionException {
         File destination = viewDirectory();
         for (Artifact artifact : resourceArtifacts()) {
@@ -83,9 +84,9 @@ public class UnpackViewResources extends AbstractEmbedderMojo {
 
     private Set<Artifact> resourceArtifacts() {
         Set<Artifact> artifacts = allArtifacts();
-        CollectionUtils.filter(artifacts, new Predicate() {
-            public boolean evaluate(Object object) {
-                Artifact artifact = (Artifact) object;
+        CollectionUtils.filter(artifacts, new Predicate<Artifact>() {
+            @Override
+            public boolean evaluate(Artifact artifact) {
                 return allowedBy("artifactId", artifact.getArtifactId(), resourceArtifactIds)
                         && allowedBy("type", artifact.getType(), resourceTypes);
             }

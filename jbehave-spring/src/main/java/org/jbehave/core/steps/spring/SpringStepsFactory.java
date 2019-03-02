@@ -35,14 +35,14 @@ public class SpringStepsFactory extends AbstractStepsFactory {
 	protected List<Class<?>> stepsTypes() {
 		// Using set because in some cases (eg: scoped proxies),
 		// there may be two actual beans for each defined bean).
-		Set<Class<?>> types = new HashSet<Class<?>>();
+		Set<Class<?>> types = new HashSet<>();
 		for (String name : context.getBeanDefinitionNames()) {
 			Class<?> type = beanType(name);
 			if (isAllowed(type) && hasAnnotatedMethods(type)) {
 				types.add(type);
 			}
 		}
-		return new ArrayList<Class<?>>(types);
+		return new ArrayList<>(types);
 	}
 
 	/**
@@ -57,7 +57,8 @@ public class SpringStepsFactory extends AbstractStepsFactory {
 		return type != null && !Modifier.isAbstract(type.getModifiers());
 	}
 
-	public Object createInstanceOfType(Class<?> type) {
+	@Override
+    public Object createInstanceOfType(Class<?> type) {
 		for (String name : context.getBeanDefinitionNames()) {
 			Class<?> beanType = beanType(name);
 			if (type.equals(beanType)) {

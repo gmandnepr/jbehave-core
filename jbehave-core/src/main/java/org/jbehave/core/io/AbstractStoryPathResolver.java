@@ -16,13 +16,14 @@ public abstract class AbstractStoryPathResolver implements
 		this.extension = extension;
 	}
 
-	public String resolve(Class<? extends Embeddable> embeddableClass) {
+	@Override
+    public String resolve(Class<? extends Embeddable> embeddableClass) {
         return formatPath(resolveDirectory(embeddableClass), resolveName(embeddableClass), extension);
 	}
 
 	private String formatPath(String directory, String name,
 			String extension) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (directory.length() > 0) {
 			sb.append(directory).append(SLASH);
 		}

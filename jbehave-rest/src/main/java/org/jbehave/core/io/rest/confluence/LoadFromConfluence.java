@@ -17,7 +17,7 @@ import org.jsoup.select.Elements;
 public class LoadFromConfluence implements ResourceLoader {
 
     private final Confluence confluence;
-    private final Set<String> acceptedMacros = new HashSet<String>(Arrays.asList("panel", "info"));
+    private final Set<String> acceptedMacros = new HashSet<>(Arrays.asList("panel", "info"));
 
     public LoadFromConfluence() {
         this(null, null);
@@ -31,6 +31,7 @@ public class LoadFromConfluence implements ResourceLoader {
         this.confluence = new Confluence(client);
     }
 
+    @Override
     public String loadResourceAsText(String resourcePath) {
         Page page = confluence.loadPage(resourcePath, false);
         Document doc = Jsoup.parse(page.getBody());

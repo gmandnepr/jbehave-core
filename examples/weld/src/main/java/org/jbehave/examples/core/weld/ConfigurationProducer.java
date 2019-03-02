@@ -16,7 +16,7 @@ import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.MostUsefulConfiguration;
 import org.jbehave.core.embedder.StoryControls;
 import org.jbehave.core.io.LoadFromClasspath;
-import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.ParameterConverters;
 import org.jbehave.core.steps.ParameterConverters.DateConverter;
@@ -28,16 +28,18 @@ public class ConfigurationProducer {
 
     @Produces @WeldConfiguration
     public Configuration getConfiguration() {
+        LoadFromClasspath resourceLoader = new LoadFromClasspath(getClass().getClassLoader());
+        TableTransformers tableTransformers = new TableTransformers();
         return new MostUsefulConfiguration()
             .useStoryControls(new StoryControls()
                 .doDryRun(false)
                 .doSkipScenariosAfterFailure(false))
-            .useStepPatternParser(new RegexPrefixCapturingPatternParser("%"))
-            .useStoryLoader(new LoadFromClasspath(getClass().getClassLoader()))
+            .useStoryLoader(resourceLoader)
             .useStoryReporterBuilder(new StoryReporterBuilder()
                 .withDefaultFormats()
                 .withFormats(CONSOLE, HTML, TXT, XML))
-            .useParameterConverters(new ParameterConverters()
-                .addConverters(new DateConverter(new SimpleDateFormat("yyyy-MM-dd"))));
+            .useParameterConverters(new ParameterConverters(resourceLoader, tableTransformers)
+                .addConverters(new DateConverter(new SimpleDateFormat("yyyy-MM-dd"))))
+            .useTableTransformers(tableTransformers);
     }
 }

@@ -47,7 +47,6 @@ import org.jbehave.core.steps.ParameterConverters.DateConverter;
 import org.jbehave.core.steps.ParameterConverters.ParameterConverter;
 import org.jbehave.core.steps.pico.PicoStepsFactoryBehaviour.FooSteps;
 import org.jbehave.core.steps.pico.PicoStepsFactoryBehaviour.FooStepsWithDependency;
-import org.junit.Assert;
 import org.junit.Test;
 import org.picocontainer.MutablePicoContainer;
 import org.picocontainer.PicoContainer;
@@ -82,7 +81,7 @@ public class PicoAnnotationBuilderBehaviour {
         try {
             assertThat((Date) parameterConverters.convert(date, Date.class), equalTo(dateFormat.parse(date)));
         } catch (ParseException e) {
-            Assert.fail();
+            throw new AssertionError();
         }
     }
 
@@ -207,6 +206,7 @@ public class PicoAnnotationBuilderBehaviour {
 
     public static class ConfigurationModule implements PicoModule {
 
+        @Override
         public void configure(MutablePicoContainer container) {
             container.addComponent(StoryControls.class, new StoryControls().doDryRun(true).doSkipScenariosAfterFailure(true));
             container.addComponent(FailureStrategy.class, SilentlyAbsorbingFailure.class);
@@ -225,6 +225,7 @@ public class PicoAnnotationBuilderBehaviour {
 
     public static class StepsModule implements PicoModule {
 
+        @Override
         public void configure(MutablePicoContainer container) {
             container.addComponent(FooSteps.class);
             container.addComponent(Integer.class, 42);
@@ -235,6 +236,7 @@ public class PicoAnnotationBuilderBehaviour {
 
     private static class PrivateModule implements PicoModule {
 
+        @Override
         public void configure(MutablePicoContainer container) {
             container.addComponent(StoryLoader.class, new LoadFromURL());
         }

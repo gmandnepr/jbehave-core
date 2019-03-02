@@ -8,9 +8,12 @@ import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  *  Creates instances of {@link MoreExecutors#sameThreadExecutor()}.
+ *  @deprecated Use {@link DirectExecutorService}
  */
+@Deprecated
 public class SameThreadExecutors implements ExecutorServiceFactory {
 
+    @Override
     public ExecutorService create(EmbedderControls controls) {
         return MoreExecutors.sameThreadExecutor();
     }

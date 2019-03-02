@@ -6,10 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.model.StepPattern;
 import org.jbehave.core.steps.DelegatingStepMonitor;
 import org.jbehave.core.steps.StepMonitor;
@@ -17,16 +17,17 @@ import org.jbehave.core.steps.StepType;
 
 public class MatchingStepMonitor extends DelegatingStepMonitor {
 
-    public MatchingStepMonitor(StepMonitor delegate) {
-		super(delegate);
+    public MatchingStepMonitor(StepMonitor... delegates) {
+		super(delegates);
 	}
 
-	private Map<String, StepMatch> matched = new HashMap<String, StepMatch>();
+	private Map<String, StepMatch> matched = new HashMap<>();
 
     public List<StepMatch> matched() {
-        return new ArrayList<StepMatch>(matched.values());
+        return new ArrayList<>(matched.values());
     }
 
+    @Override
     public void stepMatchesPattern(String step, boolean matches, StepPattern pattern, Method method,
             Object stepsInstance) {
     	super.stepMatchesPattern(step, matches, pattern, method, stepsInstance);

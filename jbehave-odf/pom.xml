@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jbehave</groupId>
     <artifactId>jbehave</artifactId>
-    <version>4.1-SNAPSHOT</version>
+    <version>4.5-SNAPSHOT</version>
   </parent>
   <artifactId>jbehave-odf</artifactId>
   <name>JBehave ODF</name>
@@ -18,7 +18,7 @@
     <dependency>
 	  <groupId>org.apache.odftoolkit</groupId>
 	  <artifactId>simple-odf</artifactId>
-	  <version>0.7-incubating</version>
+	  <version>0.8.1-incubating</version>
 	</dependency>
   </dependencies>
 

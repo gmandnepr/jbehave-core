@@ -10,13 +10,12 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Transformer;
 import org.codehaus.plexus.util.SelectorUtils;
 
 import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.isBlank;
-
+import static org.apache.commons.lang3.StringUtils.isBlank;
 /**
  * Find all matching file entries in a jar.
  */
@@ -54,7 +53,7 @@ public class JarFileScanner {
         try {
             JarFile jar = new JarFile(jarURL.getFile());
             try {
-                List<String> result = new ArrayList<String>();
+                List<String> result = new ArrayList<>();
                 Enumeration<JarEntry> en = jar.entries();
                 while (en.hasMoreElements()) {
                     JarEntry entry = en.nextElement();
@@ -90,10 +89,10 @@ public class JarFileScanner {
     }
 
     private List<String> toLocalPath(List<String> patternList) {
-        List<String> transformed = new ArrayList<String>(patternList);
-        CollectionUtils.transform(transformed, new Transformer() {
-            public Object transform(Object input) {
-                String pattern=(String)input;
+        List<String> transformed = new ArrayList<>(patternList);
+        CollectionUtils.transform(transformed, new Transformer<String, String>() {
+            @Override
+            public String transform(String pattern) {
                 return pattern!=null ? pattern.replace('/', File.separatorChar) : null;
             }
         });

@@ -3,21 +3,23 @@ package org.jbehave.core.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
-public class TableUtils {
-
-    public static List<String> parseRow(String rowAsString, String separator, boolean trimValues) {
-        return parseRow(rowAsString, separator, null, trimValues);
+public class TableUtils
+{
+    public static List<String> parseRow(String rowAsString, boolean header, ExamplesTableProperties properties) {
+        String separator = header ? properties.getHeaderSeparator() : properties.getValueSeparator();
+        return parseRow(rowAsString, separator, properties.getCommentSeparator(), properties.isTrim());
     }
-    
-    public static List<String> parseRow(String rowAsString, String separator, String commentSeparator, boolean trimValues) {
-        StringBuffer regex = new StringBuffer();
+
+    private static List<String> parseRow(String rowAsString, String separator, String commentSeparator,
+            boolean trimValues) {
+        StringBuilder regex = new StringBuilder();
         for (char c : separator.toCharArray()) {
             regex.append("\\").append(c);
         }
-        List<String> values = new ArrayList<String>();
-        for ( String value : rowAsString.split(regex.toString(),-1) ){
+        List<String> values = new ArrayList<>();
+        for (String value : rowAsString.split(regex.toString(), -1)) {
             String stripped = StringUtils.substringBefore(value, commentSeparator);
             String trimmed = trimValues ? stripped.trim() : stripped;
             values.add(StringUtils.substringBefore(trimmed, commentSeparator));
@@ -32,5 +34,4 @@ public class TableUtils {
         }
         return values;
     }
-
 }

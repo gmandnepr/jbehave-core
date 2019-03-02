@@ -1,12 +1,22 @@
 package org.jbehave.core.steps;
 
+import static org.jbehave.core.annotations.AfterScenario.Outcome.ANY;
+import static org.jbehave.core.annotations.AfterScenario.Outcome.FAILURE;
+import static org.jbehave.core.annotations.AfterScenario.Outcome.SUCCESS;
+import static org.jbehave.core.steps.StepType.GIVEN;
+import static org.jbehave.core.steps.StepType.THEN;
+import static org.jbehave.core.steps.StepType.WHEN;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.annotations.AfterScenario;
 import org.jbehave.core.annotations.AfterScenario.Outcome;
 import org.jbehave.core.annotations.AfterStories;
@@ -26,14 +36,6 @@ import org.jbehave.core.configuration.MostUsefulConfiguration;
 import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
 import org.jbehave.core.parsers.StepPatternParser;
 import org.jbehave.core.steps.StepCollector.Stage;
-
-import static java.util.Arrays.asList;
-import static org.jbehave.core.annotations.AfterScenario.Outcome.ANY;
-import static org.jbehave.core.annotations.AfterScenario.Outcome.FAILURE;
-import static org.jbehave.core.annotations.AfterScenario.Outcome.SUCCESS;
-import static org.jbehave.core.steps.StepType.GIVEN;
-import static org.jbehave.core.steps.StepType.THEN;
-import static org.jbehave.core.steps.StepType.WHEN;
 
 /**
  * <p>
@@ -91,11 +93,11 @@ import static org.jbehave.core.steps.StepType.WHEN;
  * creating them in "dry run" mode.
  * </p>
  */
-public class Steps implements CandidateSteps {
+public class Steps extends AbstractCandidateSteps {
 
-    private final Configuration configuration;
     private Class<?> type;
     private InjectableStepsFactory stepsFactory;
+    private StepCreator stepCreator;
 
     /**
      * Creates Steps with default configuration for a class extending this
@@ -112,9 +114,12 @@ public class Steps implements CandidateSteps {
      * @param configuration the Configuration
      */
     public Steps(Configuration configuration) {
-        this.configuration = configuration;
+        super(configuration);
         this.type = this.getClass();
         this.stepsFactory = new InstanceStepsFactory(configuration, this);
+        stepCreator = new StepCreator(type, stepsFactory, configuration().stepsContext(),
+                configuration().parameterConverters(), configuration().parameterControls(), null,
+                configuration().stepMonitor());
     }
 
     /**
@@ -125,9 +130,7 @@ public class Steps implements CandidateSteps {
      * @param instance the steps instance
      */
     public Steps(Configuration configuration, Object instance) {
-        this.configuration = configuration;
-        this.type = instance.getClass();
-        this.stepsFactory = new InstanceStepsFactory(configuration, instance);
+        this(configuration, instance.getClass(), new InstanceStepsFactory(configuration, instance));
     }
 
     /**
@@ -140,9 +143,12 @@ public class Steps implements CandidateSteps {
      * @param stepsFactory the {@link InjectableStepsFactory}
      */
     public Steps(Configuration configuration, Class<?> type, InjectableStepsFactory stepsFactory) {
-        this.configuration = configuration;
+        super(configuration);
         this.type = type;
         this.stepsFactory = stepsFactory;
+        stepCreator = new StepCreator(type, stepsFactory, configuration().stepsContext(),
+                configuration().parameterConverters(), configuration().parameterControls(), null,
+                configuration().stepMonitor());
     }
 
     public Class<?> type() {
@@ -153,12 +159,9 @@ public class Steps implements CandidateSteps {
         return stepsFactory.createInstanceOfType(type);
     }
 
-    public Configuration configuration() {
-        return configuration;
-    }
-
+    @Override
     public List<StepCandidate> listCandidates() {
-        List<StepCandidate> candidates = new ArrayList<StepCandidate>();
+        List<StepCandidate> candidates = new ArrayList<>();
         for (Method method : allMethods()) {
             if (method.isAnnotationPresent(Given.class)) {
                 Given annotation = method.getAnnotation(Given.class);
@@ -208,158 +211,78 @@ public class Steps implements CandidateSteps {
     private void addCandidate(List<StepCandidate> candidates, Method method, StepType stepType,
             String stepPatternAsString, int priority) {
         checkForDuplicateCandidates(candidates, stepType, stepPatternAsString);
-        StepCandidate candidate = createCandidate(method, stepType, stepPatternAsString, priority, configuration);
-        candidate.useStepMonitor(configuration.stepMonitor());
-        candidate.useParanamer(configuration.paranamer());
-        candidate.doDryRun(configuration.storyControls().dryRun());
+        StepCandidate candidate = createCandidate(stepPatternAsString, priority, stepType, method, type, stepsFactory);
         if (method.isAnnotationPresent(Composite.class)) {
             candidate.composedOf(method.getAnnotation(Composite.class).steps());
         }
         candidates.add(candidate);
     }
 
-    private void checkForDuplicateCandidates(List<StepCandidate> candidates, StepType stepType, String patternAsString) {
-        for (StepCandidate candidate : candidates) {
-            if (candidate.getStepType() == stepType && candidate.getPatternAsString().equals(patternAsString)) {
-                throw new DuplicateCandidateFound(stepType, patternAsString);
-            }
-        }
-    }
-
-    private StepCandidate createCandidate(Method method, StepType stepType, String stepPatternAsString, int priority,
-            Configuration configuration) {
-        return new StepCandidate(stepPatternAsString, priority, stepType, method, type, stepsFactory,
-                configuration.keywords(), configuration.stepPatternParser(), configuration.parameterConverters(), configuration.parameterControls());
-    }
-
+    @Override
     public List<BeforeOrAfterStep> listBeforeOrAfterStories() {
-        List<BeforeOrAfterStep> steps = new ArrayList<BeforeOrAfterStep>();
-        steps.addAll(stepsHaving(Stage.BEFORE, BeforeStories.class));
-        steps.addAll(stepsHaving(Stage.AFTER, AfterStories.class));
+        List<BeforeOrAfterStep> steps = new ArrayList<>();
+        for (Method method : methodsAnnotatedWith(BeforeStories.class).keySet()) {
+            steps.add(new BeforeOrAfterStep(Stage.BEFORE, method, stepCreator));
+        }
+        for (Method method : methodsAnnotatedWith(AfterStories.class).keySet()) {
+            steps.add(new BeforeOrAfterStep(Stage.AFTER, method, stepCreator));
+        }
         return steps;
     }
 
+    @Override
     public List<BeforeOrAfterStep> listBeforeOrAfterStory(boolean givenStory) {
-        List<BeforeOrAfterStep> steps = new ArrayList<BeforeOrAfterStep>();
-        steps.addAll(stepsHaving(Stage.BEFORE, BeforeStory.class, givenStory));
-        steps.addAll(stepsHaving(Stage.AFTER, AfterStory.class, givenStory));
+        List<BeforeOrAfterStep> steps = new ArrayList<>();
+        for (Entry<Method, BeforeStory> entry : methodsAnnotatedWith(BeforeStory.class).entrySet()) {
+            if (entry.getValue().uponGivenStory() == givenStory) {
+                steps.add(new BeforeOrAfterStep(Stage.BEFORE, entry.getKey(), stepCreator));
+            }
+        }
+        for (Entry<Method, AfterStory> entry : methodsAnnotatedWith(AfterStory.class).entrySet()) {
+            if (entry.getValue().uponGivenStory() == givenStory) {
+                steps.add(new BeforeOrAfterStep(Stage.AFTER, entry.getKey(), stepCreator));
+            }
+        }
         return steps;
     }
 
+    @Override
     public List<BeforeOrAfterStep> listBeforeOrAfterScenario(ScenarioType type) {
-        List<BeforeOrAfterStep> steps = new ArrayList<BeforeOrAfterStep>();
-        steps.addAll(scenarioStepsHaving(type, Stage.BEFORE, BeforeScenario.class));
-        steps.addAll(scenarioStepsHaving(type, Stage.AFTER, AfterScenario.class, ANY, SUCCESS, FAILURE));
-        return steps;
-    }
-
-    private boolean runnableStoryStep(Annotation annotation, boolean givenStory) {
-        boolean uponGivenStory = uponGivenStory(annotation);
-        return uponGivenStory == givenStory;
-    }
-
-    private boolean uponGivenStory(Annotation annotation) {
-        if (annotation instanceof BeforeStory) {
-            return ((BeforeStory) annotation).uponGivenStory();
-        } else if (annotation instanceof AfterStory) {
-            return ((AfterStory) annotation).uponGivenStory();
-        }
-        return false;
-    }
-
-    private List<BeforeOrAfterStep> stepsHaving(Stage stage, Class<? extends Annotation> annotationClass) {
-        List<BeforeOrAfterStep> steps = new ArrayList<BeforeOrAfterStep>();
-        for (Method method : methodsAnnotatedWith(annotationClass)) {
-            steps.add(createBeforeOrAfterStep(stage, method));
-        }
-        return steps;
-    }
-
-    private List<BeforeOrAfterStep> stepsHaving(Stage stage, Class<? extends Annotation> annotationClass,
-            boolean givenStory) {
-        List<BeforeOrAfterStep> steps = new ArrayList<BeforeOrAfterStep>();
-        for (final Method method : methodsAnnotatedWith(annotationClass)) {
-            if (runnableStoryStep(method.getAnnotation(annotationClass), givenStory)) {
-                steps.add(createBeforeOrAfterStep(stage, method));
+        List<BeforeOrAfterStep> steps = new ArrayList<>();
+        for (Entry<Method, BeforeScenario> entry : methodsAnnotatedWith(BeforeScenario.class).entrySet()) {
+            if (entry.getValue().uponType() == type) {
+                steps.add(new BeforeOrAfterStep(Stage.BEFORE, entry.getKey(), stepCreator));
             }
         }
-        return steps;
-    }
-
-    private List<BeforeOrAfterStep> scenarioStepsHaving(ScenarioType type, Stage stage,
-            Class<? extends Annotation> annotationClass, Outcome... outcomes) {
-        List<BeforeOrAfterStep> steps = new ArrayList<BeforeOrAfterStep>();
-        for (Method method : methodsAnnotatedWith(annotationClass)) {
-            ScenarioType scenarioType = scenarioType(method, annotationClass);
-            if (type == scenarioType) {
-                if (stage == Stage.BEFORE) {
-                    steps.add(createBeforeOrAfterStep(stage, method));
-                }
-                if (stage == Stage.AFTER) {
-                    Outcome scenarioOutcome = scenarioOutcome(method, annotationClass);
-                    for (Outcome outcome : outcomes) {
-                        if (outcome.equals(scenarioOutcome)) {
-                            steps.add(createBeforeOrAfterStep(stage, method, outcome));
-                        }
-                    }
+        Map<Method, AfterScenario> afterScenarioMethods = methodsAnnotatedWith(AfterScenario.class);
+        for (Outcome outcome : new Outcome[] { ANY, SUCCESS, FAILURE }) {
+            for (Entry<Method, AfterScenario> entry : afterScenarioMethods.entrySet()) {
+                AfterScenario annotation = entry.getValue();
+                if (annotation.uponType() == type && annotation.uponOutcome() == outcome) {
+                    steps.add(new BeforeOrAfterStep(Stage.AFTER, entry.getKey(), outcome, stepCreator));
                 }
             }
         }
         return steps;
     }
 
-    private ScenarioType scenarioType(Method method, Class<? extends Annotation> annotationClass) {
-        if (annotationClass.isAssignableFrom(BeforeScenario.class)) {
-            return ((BeforeScenario) method.getAnnotation(annotationClass)).uponType();
-        }
-        if (annotationClass.isAssignableFrom(AfterScenario.class)) {
-            return ((AfterScenario) method.getAnnotation(annotationClass)).uponType();
-        }
-        return ScenarioType.NORMAL;
+    private Method[] allMethods() {
+        return type.getMethods();
     }
 
-    private Outcome scenarioOutcome(Method method, Class<? extends Annotation> annotationClass) {
-        if (annotationClass.isAssignableFrom(AfterScenario.class)) {
-            return ((AfterScenario) method.getAnnotation(annotationClass)).uponOutcome();
-        }
-        return Outcome.ANY;
-    }
-
-    private BeforeOrAfterStep createBeforeOrAfterStep(Stage stage, Method method) {
-        return createBeforeOrAfterStep(stage, method, Outcome.ANY);
-    }
-
-    private BeforeOrAfterStep createBeforeOrAfterStep(Stage stage, Method method, Outcome outcome) {
-        return new BeforeOrAfterStep(stage, method, outcome, new StepCreator(type, stepsFactory,
-                configuration.parameterConverters(), configuration.parameterControls(), null, configuration.stepMonitor()));
-    }
-
-    private List<Method> allMethods() {
-        return asList(type.getMethods());
-    }
-
-    private List<Method> methodsAnnotatedWith(Class<? extends Annotation> annotationClass) {
-        List<Method> annotated = new ArrayList<Method>();
+    private <T extends Annotation> Map<Method, T> methodsAnnotatedWith(Class<T> annotationClass) {
+        Map<Method, T> annotated = new LinkedHashMap<>();
         for (Method method : allMethods()) {
-            if (method.isAnnotationPresent(annotationClass)) {
-                annotated.add(method);
+            T annotation = method.getAnnotation(annotationClass);
+            if (annotation != null) {
+                annotated.put(method, annotation);
             }
         }
         return annotated;
-    }
-
-    @SuppressWarnings("serial")
-    public static class DuplicateCandidateFound extends RuntimeException {
-
-        public DuplicateCandidateFound(StepType stepType, String patternAsString) {
-            super(stepType + " " + patternAsString);
-        }
-
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append(instance()).toString();
     }
-
 }

@@ -5,15 +5,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * Provides an view of a list of {@link StoryMap}s, indexed by meta filters.
  */
 public class StoryMaps {
     
-    private Map<String, StoryMap> indexed = new LinkedHashMap<String, StoryMap>();
+    private Map<String, StoryMap> indexed = new LinkedHashMap<>();
 
     public StoryMaps(List<StoryMap> maps) {
         index(maps);
@@ -26,7 +26,7 @@ public class StoryMaps {
     }
 
     public List<String> getMetaFilters() {
-        return new ArrayList<String>(indexed.keySet());
+        return new ArrayList<>(indexed.keySet());
     }
 
     public StoryMap getMap(String metaFilter) {
@@ -34,7 +34,7 @@ public class StoryMaps {
     }
 
     public List<StoryMap> getMaps() {
-        return new ArrayList<StoryMap>(indexed.values());
+        return new ArrayList<>(indexed.values());
     }
 
     @Override

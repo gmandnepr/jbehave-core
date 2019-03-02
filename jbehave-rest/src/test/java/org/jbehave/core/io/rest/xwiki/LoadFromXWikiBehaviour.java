@@ -5,7 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.jbehave.core.io.rest.RESTClient.Type;
@@ -38,7 +38,7 @@ public class LoadFromXWikiBehaviour {
 	}
 
 	@Test
-	public void canReadFromXWikiAsXML() throws MalformedURLException {
+	public void canReadFromXWikiAsXML() {
 		LoadFromXWiki loader = new LoadFromXWiki(Type.XML);
 		String entity = read("xwiki.xml");
 		String text = loader.text(entity, Type.XML);
@@ -47,7 +47,7 @@ public class LoadFromXWikiBehaviour {
 
 	private String read(String path) {
 		try {
-			return IOUtils.toString(this.getClass().getClassLoader().getResourceAsStream(path));
+			return IOUtils.toString(getClass().getClassLoader().getResource(path), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

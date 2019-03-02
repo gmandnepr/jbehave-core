@@ -1,20 +1,5 @@
 package org.jbehave.core.configuration;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.fail;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.lang.reflect.Type;
-import java.util.List;
-
 import org.hamcrest.Matchers;
 import org.jbehave.core.ConfigurableEmbedder;
 import org.jbehave.core.InjectableEmbedder;
@@ -33,6 +18,15 @@ import org.jbehave.core.steps.scan.GivenOnly;
 import org.jbehave.core.steps.scan.GivenWhen;
 import org.jbehave.core.steps.scan.GivenWhenThen;
 import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Type;
+import java.util.List;
+
+import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 public class AnnotationBuilderBehaviour {
 
@@ -110,7 +104,7 @@ public class AnnotationBuilderBehaviour {
                 new PrintStreamAnnotationMonitor(new PrintStream(baos)));
         try {
             assertThatStepsInstancesAre(annotatedFailing.buildCandidateSteps(), MySteps.class);
-            fail("Exception was not thrown");
+            throw new AssertionError("Exception was not thrown");
         } catch (RuntimeException e) {
             assertThat(baos.toString(), containsString("Element creation failed"));
             assertThat(baos.toString(), containsString("RuntimeException"));
@@ -189,7 +183,7 @@ public class AnnotationBuilderBehaviour {
                 new PrintStreamAnnotationMonitor(new PrintStream(baos)));
         try {
             annotatedPrivate.embeddableInstance();
-            fail("Exception was not thrown");
+            throw new AssertionError("Exception was not thrown");
         } catch (InstantiationFailed e) {
             assertThat(baos.toString(), containsString("Element creation failed"));
             assertThat(baos.toString(), containsString("IllegalAccessException"));
@@ -211,13 +205,15 @@ public class AnnotationBuilderBehaviour {
 
     }
 
-    static class MyParameterConverter implements ParameterConverter {
+    static class MyParameterConverter implements ParameterConverter<String> {
 
+        @Override
         public boolean accept(Type type) {
             return true;
         }
 
-        public Object convertValue(String value, Type type) {
+        @Override
+        public String convertValue(String value, Type type) {
             return value + "Converted";
         }
 
@@ -274,7 +270,8 @@ public class AnnotationBuilderBehaviour {
     @Configure(using = MyConfiguration.class)
     static class AnnotatedCustomConfiguration extends InjectableEmbedder {
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }
@@ -288,7 +285,8 @@ public class AnnotationBuilderBehaviour {
 	@UsingSteps(instances = { MySteps.class })
 	static class AnnotedEmbedderControls extends InjectableEmbedder {
 
-		public void run() throws Throwable {
+		@Override
+        public void run() {
 		}
 
 	}
@@ -298,7 +296,8 @@ public class AnnotationBuilderBehaviour {
     @UsingSteps(instances = { MySteps.class })
     static class AnnotedInjectable extends InjectableEmbedder {
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }
@@ -308,7 +307,8 @@ public class AnnotationBuilderBehaviour {
     @UsingSteps(instances = { MySteps.class })
     static class AnnotedInjectableWithoutStepsFactory extends InjectableEmbedder {
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }
@@ -318,7 +318,8 @@ public class AnnotationBuilderBehaviour {
     @UsingSteps(instances = { MySteps.class })
     static class AnnotedConfigurable extends ConfigurableEmbedder {
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }
@@ -328,7 +329,8 @@ public class AnnotationBuilderBehaviour {
     @UsingSteps(instances = { MySteps.class })
     static class AnnotedConfigurableWithoutStepsFactory extends ConfigurableEmbedder {
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }
@@ -342,7 +344,8 @@ public class AnnotationBuilderBehaviour {
     @UsingSteps(instances = { MySteps.class })
     private static class AnnotatedPrivate extends ConfigurableEmbedder {
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }

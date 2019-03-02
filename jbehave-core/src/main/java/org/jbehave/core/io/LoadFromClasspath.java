@@ -3,35 +3,35 @@ package org.jbehave.core.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.io.Charsets;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * Loads story resources from classpath
  */
 public class LoadFromClasspath implements StoryLoader {
-	
-	private final Charset charset;
+
+    private final Charset charset;
 
     protected final ClassLoader classLoader;
 
     /**
-     * Uses default enconding UTF-8.
+     * Uses default encoding UTF-8.
      * @see {@link #LoadFromClasspath(Charset)}.
      */
     public LoadFromClasspath() {
-        this(Charsets.UTF_8);
+        this(StandardCharsets.UTF_8);
     }
     
     /**
-     * Uses enconding provided.
+     * Uses encoding provided.
      * @param charset the Charset
      * @see {@link #LoadFromClasspath(ClassLoader,Charset)}.
      */
     public LoadFromClasspath(Charset charset) {
-    	this(Thread.currentThread().getContextClassLoader(), charset);
+        this(Thread.currentThread().getContextClassLoader(), charset);
     }
 
     /**
@@ -44,15 +44,15 @@ public class LoadFromClasspath implements StoryLoader {
     }
 
     /**
-     * Uses default enconding UTF-8
+     * Uses default encoding UTF-8
      * @param classLoader the ClassLoader
      */
     public LoadFromClasspath(ClassLoader classLoader) {
-        this(classLoader, Charsets.UTF_8);
+        this(classLoader, StandardCharsets.UTF_8);
     }
     
     /**
-     * Uses classloader and enconding provided.
+     * Uses classloader and encoding provided.
      * @param classLoader the ClassLoader
      * @param charset the Charset
      */
@@ -61,6 +61,7 @@ public class LoadFromClasspath implements StoryLoader {
         this.charset = charset;
     }
 
+    @Override
     public String loadResourceAsText(String resourcePath) {
         InputStream stream = resourceAsStream(resourcePath);
         try {
@@ -70,6 +71,7 @@ public class LoadFromClasspath implements StoryLoader {
         }
     }
 
+    @Override
     public String loadStoryAsText(String storyPath) {
         return loadResourceAsText(storyPath);
     }

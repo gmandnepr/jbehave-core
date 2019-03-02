@@ -36,9 +36,10 @@ public class IndexFromXWiki extends IndexWithBreadcrumbs {
 		super(new RESTClient(Type.JSON, username, password), nameResolver);
 	}
 
-	protected Map<String, Resource> createIndexFromEntity(String rootURI, String entity) {
+	@Override
+    protected Map<String, Resource> createIndexFromEntity(String rootURI, String entity) {
 		Collection<Page> pages = parse(entity);
-		Map<String, Resource> index = new HashMap<String, Resource>();
+		Map<String, Resource> index = new HashMap<>();
 		for (Page page : pages) {
 			String parentName = (page.parent != null ? resolveName(page.parent) : null);
 			String uri = format(PAGE_URI, rootURI, page.name);
@@ -48,13 +49,14 @@ public class IndexFromXWiki extends IndexWithBreadcrumbs {
 		return index;
 	}
 
-	protected String uri(String rootPath) {
+	@Override
+    protected String uri(String rootPath) {
 		return format(INDEX_URI, rootPath);
 	}
 
 	private Collection<Page> parse(String entity) {
 		Gson gson = new Gson();
-		return gson.<Collection<Page>> fromJson(
+		return gson.fromJson(
 				jsonMember(entity, "pageSummaries"),
 				new TypeToken<Collection<Page>>() {
 				}.getType());

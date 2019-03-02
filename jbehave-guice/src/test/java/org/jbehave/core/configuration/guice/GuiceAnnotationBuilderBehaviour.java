@@ -36,20 +36,24 @@ import org.jbehave.core.embedder.StoryControls;
 import org.jbehave.core.failures.FailureStrategy;
 import org.jbehave.core.failures.SilentlyAbsorbingFailure;
 import org.jbehave.core.i18n.LocalizedKeywords;
+import org.jbehave.core.io.LoadFromClasspath;
 import org.jbehave.core.io.LoadFromURL;
 import org.jbehave.core.io.StoryLoader;
 import org.jbehave.core.model.ExamplesTable;
+import org.jbehave.core.model.ExamplesTableFactory;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
 import org.jbehave.core.parsers.StepPatternParser;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.CandidateSteps;
+import org.jbehave.core.steps.ParameterControls;
 import org.jbehave.core.steps.ParameterConverters;
 import org.jbehave.core.steps.Steps;
+import org.jbehave.core.steps.ParameterConverters.AbstractParameterConverter;
 import org.jbehave.core.steps.ParameterConverters.DateConverter;
 import org.jbehave.core.steps.ParameterConverters.ParameterConverter;
 import org.jbehave.core.steps.guice.GuiceStepsFactoryBehaviour.FooSteps;
 import org.jbehave.core.steps.guice.GuiceStepsFactoryBehaviour.FooStepsWithDependency;
-import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.inject.AbstractModule;
@@ -111,7 +115,7 @@ public class GuiceAnnotationBuilderBehaviour {
     }
 
     private void assertThatCustomObjectIsConverted(ParameterConverters parameterConverters) {
-        assertThat(((CustomObject) parameterConverters.convert("value", CustomObject.class)).toString(),
+        assertThat(parameterConverters.convert("value", CustomObject.class).toString(),
                 equalTo(new CustomObject("value").toString()));
     }
 
@@ -120,7 +124,7 @@ public class GuiceAnnotationBuilderBehaviour {
         try {
             assertThat((Date) parameterConverters.convert(date, Date.class), equalTo(dateFormat.parse(date)));
         } catch (ParseException e) {
-            Assert.fail();
+            throw new AssertionError();
         }
     }
 
@@ -283,13 +287,10 @@ public class GuiceAnnotationBuilderBehaviour {
 
     }
 
-    public static class CustomConverter implements ParameterConverter {
+    public static class CustomConverter extends AbstractParameterConverter<CustomObject> {
 
-        public boolean accept(Type type) {
-            return ((Class<?>) type).isAssignableFrom(CustomObject.class);
-        }
-
-        public Object convertValue(String value, Type type) {
+        @Override
+        public CustomObject convertValue(String value, Type type) {
             return new CustomObject(value);
         }
     }
@@ -297,6 +298,8 @@ public class GuiceAnnotationBuilderBehaviour {
     public static class MyExampleTableConverter extends ParameterConverters.ExamplesTableConverter {
 
         public MyExampleTableConverter() {
+            super(new ExamplesTableFactory(new LoadFromClasspath(), new ParameterConverters(), new ParameterControls(),
+                    new TableTransformers()));
         }
 
     }

@@ -1,7 +1,6 @@
 package org.jbehave.core.io.rest.mojo;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.jbehave.core.io.rest.ResourceExporter;
 import org.jbehave.core.io.rest.ResourceIndexer;
 import org.jbehave.core.io.rest.ResourceUploader;
@@ -31,7 +30,8 @@ public class ExportFromFilesystemMojo extends AbstractFilesystemMojo {
 	 */
 	String resourcesSyntax;
 
-	public void execute() throws MojoExecutionException, MojoFailureException {
+	@Override
+    public void execute() throws MojoExecutionException {
 		try {
 			getLog().info(
 					"Exporting from filesystem resources to REST root URI "

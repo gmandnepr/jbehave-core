@@ -12,16 +12,15 @@ import org.jbehave.core.embedder.PerformableTree.ExamplePerformableScenario;
 import org.jbehave.core.embedder.PerformableTree.NormalPerformableScenario;
 import org.jbehave.core.embedder.PerformableTree.PerformableRoot;
 import org.jbehave.core.embedder.PerformableTree.PerformableScenario;
+import org.jbehave.core.embedder.PerformableTree.PerformableSteps;
 import org.jbehave.core.embedder.PerformableTree.PerformableStory;
 import org.jbehave.core.embedder.PerformableTree.Status;
 import org.jbehave.core.failures.PendingStepStrategy;
-import org.jbehave.core.model.ExamplesTable;
-import org.jbehave.core.model.GivenStory;
-import org.jbehave.core.model.Scenario;
-import org.jbehave.core.model.Story;
+import org.jbehave.core.model.*;
 import org.jbehave.core.model.TableTransformers.Formatting;
 import org.jbehave.core.model.TableTransformers.FromLandscape;
 import org.jbehave.core.model.TableTransformers.Replacing;
+import org.jbehave.core.steps.AbstractStepResult.Comment;
 import org.jbehave.core.steps.AbstractStepResult.Failed;
 import org.jbehave.core.steps.AbstractStepResult.Ignorable;
 import org.jbehave.core.steps.AbstractStepResult.NotPerformed;
@@ -34,6 +33,7 @@ import org.jbehave.core.steps.StepMonitor;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.json.JsonHierarchicalStreamDriver;
+import org.jbehave.core.steps.Timing;
 
 public class CrossReference {
 
@@ -108,12 +108,15 @@ public class CrossReference {
 		xstream.alias(name.toLowerCase(), PerformableRoot.class);
 		xstream.alias("performableStory", PerformableStory.class);
 		xstream.alias("performableScenario", PerformableScenario.class);
+		xstream.alias("performableSteps", PerformableSteps.class);
 		xstream.alias("normalPerformableScenario", NormalPerformableScenario.class);
 		xstream.alias("examplePerformableScenario", ExamplePerformableScenario.class);
 		xstream.alias("status", Status.class);
 		xstream.alias("story", Story.class);
 		xstream.alias("scenario", Scenario.class);
+		xstream.alias("lifecycleSteps", Lifecycle.Steps.class);
 		xstream.alias("givenStory", GivenStory.class);
+		xstream.alias("comment", Comment.class);
 		xstream.alias("failed", Failed.class);
 		xstream.alias("pending", Pending.class);
 		xstream.alias("notPerformed", NotPerformed.class);
@@ -125,6 +128,7 @@ public class CrossReference {
 		xstream.alias("formatting", Formatting.class);
 		xstream.alias("replacing", Replacing.class);
 		xstream.alias("stepMatch", StepMatch.class);
+		xstream.alias("timing", Timing.class);
 		xstream.omitField(ExamplesTable.class, "parameterConverters");
 		xstream.omitField(ExamplesTable.class, "tableTrasformers");
 		xstream.omitField(ExamplesTable.class, "defaults");
@@ -137,21 +141,24 @@ public class CrossReference {
 	/**
 	 * @deprecated
 	 */
-	public synchronized void outputToFiles(
+	@Deprecated
+    public synchronized void outputToFiles(
 			StoryReporterBuilder storyReporterBuilder) {
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public CrossReference withMetaFilter(String metaFilter) {
+	@Deprecated
+    public CrossReference withMetaFilter(String metaFilter) {
 		return this;
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public CrossReference withPendingStepStrategy(
+	@Deprecated
+    public CrossReference withPendingStepStrategy(
 			PendingStepStrategy pendingStepStrategy) {
 		return this;
 	}
@@ -159,21 +166,24 @@ public class CrossReference {
 	/**
 	 * @deprecated
 	 */
-	public CrossReference withOutputAfterEachStory(boolean outputAfterEachStory) {
+	@Deprecated
+    public CrossReference withOutputAfterEachStory(boolean outputAfterEachStory) {
 		return this;
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public CrossReference withThreadSafeDelegateFormat(Format format) {
+	@Deprecated
+    public CrossReference withThreadSafeDelegateFormat(Format format) {
 		return this;
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public CrossReference excludingStoriesWithNoExecutedScenarios(
+	@Deprecated
+    public CrossReference excludingStoriesWithNoExecutedScenarios(
 			boolean exclude) {
 		return this;
 	}
@@ -181,47 +191,54 @@ public class CrossReference {
 	/**
 	 * @deprecated
 	 */
-	public String getMetaFilter() {
+	@Deprecated
+    public String getMetaFilter() {
 		return "";
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public StepMonitor getStepMonitor() {
+	@Deprecated
+    public StepMonitor getStepMonitor() {
 		return new NullStepMonitor();
 	}
 
 	/**
 	 * @deprecated
 	 */
-	protected XRefRoot newXRefRoot() {
+	@Deprecated
+    protected XRefRoot newXRefRoot() {
 		return new XRefRoot();
 	}
 
 	/**
 	 * @deprecated
 	 */
-	protected Writer makeWriter(File file) throws IOException {
+	@Deprecated
+    protected Writer makeWriter(File file) throws IOException {
 		return new FileWriter(file);
 	}
 
 	/**
 	 * @deprecated
 	 */
-	protected void aliasForXRefStory(XStream xstream) {
+	@Deprecated
+    protected void aliasForXRefStory(XStream xstream) {
 	}
 
 	/**
 	 * @deprecated
 	 */
-	protected void aliasForXRefRoot(XStream xstream) {
+	@Deprecated
+    protected void aliasForXRefRoot(XStream xstream) {
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public StoryReporter createStoryReporter(FilePrintStreamFactory factory,
+	@Deprecated
+    public StoryReporter createStoryReporter(FilePrintStreamFactory factory,
 			final StoryReporterBuilder storyReporterBuilder) {
 		return new NullStoryReporter();
 	}
@@ -229,18 +246,20 @@ public class CrossReference {
 	/**
 	 * @deprecated
 	 */
-	public static class XRefRoot {
+	@Deprecated
+    public static class XRefRoot {
 	}
 
 	/**
 	 * @deprecated
 	 */
-	public static class XRefStory {
+	@Deprecated
+    public static class XRefStory {
 	}
 
 	public static class XRef {
 		private List<PerformableStory> stories;
-		private List<PerformableScenario> scenarios = new ArrayList<PerformableScenario>();
+		private List<PerformableScenario> scenarios = new ArrayList<>();
 
 		public XRef(PerformableRoot root) {
 			stories = root.getStories();

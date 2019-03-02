@@ -9,9 +9,9 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.ConfigurableEmbedder;
 import org.jbehave.core.Embeddable;
 import org.jbehave.core.configuration.Configuration;
@@ -88,9 +88,9 @@ public class Embedder {
         for (String storyPath : storyPaths) {
             Story story = storyManager.storyOfPath(storyPath);
             embedderMonitor.mappingStory(storyPath, metaFilters());
-            storyMapper.map(story, new MetaFilter(""));
+            storyMapper.map(story, new MetaFilter("", embedderMonitor));
             for (String filter : metaFilters) {
-                storyMapper.map(story, new MetaFilter(filter));
+                storyMapper.map(story, new MetaFilter(filter, embedderMonitor));
             }
         }
 
@@ -162,7 +162,7 @@ public class Embedder {
     }
 
     private List<Embeddable> embeddables(List<String> classNames, EmbedderClassLoader classLoader) {
-        List<Embeddable> embeddables = new ArrayList<Embeddable>();
+        List<Embeddable> embeddables = new ArrayList<>();
         for (String className : classNames) {
             if (!classLoader.isAbstract(className)) {
                 embeddables.add(classLoader.newInstance(Embeddable.class, className));
@@ -225,6 +225,8 @@ public class Embedder {
             } finally {
                 // shutdown regardless of failures in reports view
                 shutdownExecutorService();
+                // reset story manager as executor service is shutdown
+                storyManager = null;
             }
 
         }
@@ -285,6 +287,13 @@ public class Embedder {
         StoryReporterBuilder builder = configuration().storyReporterBuilder();
         if (builder.hasCrossReference()) {
             builder.crossReference().serialise(storyManager().performableRoot(), builder.outputDirectory());
+        }
+    }
+
+    public void generateSurefireReport() {
+        StoryReporterBuilder builder = configuration().storyReporterBuilder();
+        if (builder.hasSurefireReporter()) {
+            builder.surefireReporter().generate(storyManager().performableRoot(), builder.outputDirectory());
         }
     }
 
@@ -361,7 +370,7 @@ public class Embedder {
 
     public List<CandidateSteps> candidateSteps() {
         if (candidateSteps == null) {
-            candidateSteps = new ArrayList<CandidateSteps>();
+            candidateSteps = new ArrayList<>();
         }
         return candidateSteps;
     }
@@ -447,14 +456,14 @@ public class Embedder {
 
     public List<String> metaFilters() {
         if (metaFilters == null) {
-            metaFilters = new ArrayList<String>();
+            metaFilters = new ArrayList<>();
         }
         return metaFilters;
     }
 
     public Map<String,MetaMatcher> metaMatchers(){
     	if (metaMatchers == null){
-    		metaMatchers = new HashMap<String, MetaMatcher>();
+    		metaMatchers = new HashMap<>();
     	}
     	return metaMatchers;
     }
@@ -549,10 +558,12 @@ public class Embedder {
 
     public static class ThrowingRunningStoriesFailed implements EmbedderFailureStrategy {
 
+        @Override
         public void handleFailures(BatchFailures failures) {
             throw new RunningStoriesFailed(failures);
         }
 
+        @Override
         public void handleFailures(ReportsCount count) {
             throw new RunningStoriesFailed(count);
         }

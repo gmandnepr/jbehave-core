@@ -20,7 +20,8 @@ public class UploadToXWiki extends UploadToREST {
 		super(type, username, password);
 	}
 
-	protected String entity(Resource resource, Type type) {
+	@Override
+    protected String entity(Resource resource, Type type) {
 		Page page = new Page();
 		page.syntax = ( resource.hasSyntax() ? resource.getSyntax() : "xwiki/2.0");
 		page.title = resource.getName();
@@ -29,8 +30,7 @@ public class UploadToXWiki extends UploadToREST {
 		switch (type) {
 		case JSON:
 			Gson gson = new Gson();
-			String json = gson.toJson(page);
-			return json;
+            return gson.toJson(page);
 		case XML:
 			page.xmlns = "http://www.xwiki.org";
 			XStream xstream = new XStream();
@@ -38,8 +38,7 @@ public class UploadToXWiki extends UploadToREST {
 			xstream.useAttributeFor(Page.class, "xmlns");
             xstream.aliasField("xmlns", Page.class, "xmlns");
             xstream.ignoreUnknownElements();
-			String xml = xstream.toXML(page);
-			return xml;
+            return xstream.toXML(page);
 		default:
 			return resource.getContent();
 		}

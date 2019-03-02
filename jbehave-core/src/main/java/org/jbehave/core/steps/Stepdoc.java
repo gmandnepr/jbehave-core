@@ -2,8 +2,8 @@ package org.jbehave.core.steps;
 
 import java.lang.reflect.Method;
 
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * A Stepdoc represents the documentation on a single {@link StepCandidate},
@@ -58,15 +58,19 @@ public class Stepdoc implements Comparable<Stepdoc> {
      * @return The method signature in String format
      */
     public String getMethodSignature() {
-        String methodSignature = method.toString();
-        return methodSignature.replaceFirst("public void ", "");
+        if (method != null) {
+            String methodSignature = method.toString();
+            return methodSignature.replaceFirst("public void ", "");
+        }
+        return null;
     }
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this).toString();
+        return ToStringBuilder.reflectionToString(this);
     }
 
+    @Override
     public int compareTo(Stepdoc that) {
         return CompareToBuilder.reflectionCompare(this, that);
     }

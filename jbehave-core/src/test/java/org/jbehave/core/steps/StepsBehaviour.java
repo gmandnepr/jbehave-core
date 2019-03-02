@@ -7,7 +7,17 @@ import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.jbehave.core.annotations.AfterScenario;
+import org.jbehave.core.annotations.AfterStories;
+import org.jbehave.core.annotations.AfterStory;
+import org.jbehave.core.annotations.Alias;
+import org.jbehave.core.annotations.Aliases;
+import org.jbehave.core.annotations.BeforeScenario;
+import org.jbehave.core.annotations.BeforeStories;
+import org.jbehave.core.annotations.BeforeStory;
+import org.jbehave.core.annotations.Given;
 import org.jbehave.core.annotations.ScenarioType;
+import org.jbehave.core.annotations.Then;
+import org.jbehave.core.annotations.When;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.Keywords.StartingWordNotFound;
 import org.jbehave.core.configuration.MostUsefulConfiguration;
@@ -16,7 +26,7 @@ import org.jbehave.core.failures.UUIDExceptionWrapper;
 import org.jbehave.core.i18n.LocalizedKeywords;
 import org.jbehave.core.steps.AbstractStepResult.Failed;
 import org.jbehave.core.steps.StepCollector.Stage;
-import org.jbehave.core.steps.Steps.DuplicateCandidateFound;
+import org.jbehave.core.steps.AbstractCandidateSteps.DuplicateCandidateFound;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -28,7 +38,7 @@ import static org.hamcrest.Matchers.is;
 
 public class StepsBehaviour {
 
-    private Map<String, String> tableRow = new HashMap<String, String>();
+    private Map<String, String> tableRow = new HashMap<>();
 
     @Test
     public void shouldListCandidateStepsFromAnnotatedMethodsWithSingleAlias() {
@@ -326,90 +336,90 @@ public class StepsBehaviour {
         private boolean beforeStories;
         private boolean afterStories;
         
-        @org.jbehave.core.annotations.Given("a given")
-        @org.jbehave.core.annotations.Aliases(values={"a given alias", "another given alias"})
+        @Given("a given")
+        @Aliases(values={"a given alias", "another given alias"})
         public void given() {
             givens++;
         }
 
-        @org.jbehave.core.annotations.When("a when")
-        @org.jbehave.core.annotations.Aliases(values={"a when alias", "another when alias"})
+        @When("a when")
+        @Aliases(values={"a when alias", "another when alias"})
         public void when() {
             whens++;
         }
         
-        @org.jbehave.core.annotations.Then("a then")
-        @org.jbehave.core.annotations.Aliases(values={"a then alias", "another then alias"})
+        @Then("a then")
+        @Aliases(values={"a then alias", "another then alias"})
         public void then() {
             thens++;
         }
 
-        @org.jbehave.core.annotations.BeforeStories
+        @BeforeStories
         public void beforeStories() {
             beforeStories = true;
         }
         
-        @org.jbehave.core.annotations.AfterStories
+        @AfterStories
         public void afterStories() {
             afterStories = true;
         }
 
-        @org.jbehave.core.annotations.BeforeStory
+        @BeforeStory
         public void beforeStory() {
             beforeStory = true;
         }
         
-        @org.jbehave.core.annotations.AfterStory
+        @AfterStory
         public void afterStory() {
             afterStory = true;
         }
 
-        @org.jbehave.core.annotations.BeforeStory(uponGivenStory=true)
+        @BeforeStory(uponGivenStory=true)
         public void beforeGivenStory() {
             beforeGivenStory = true;
         }
         
-        @org.jbehave.core.annotations.AfterStory(uponGivenStory=true)
+        @AfterStory(uponGivenStory=true)
         public void afterGivenStory() {
             afterGivenStory = true;
         }        
         
-        @org.jbehave.core.annotations.BeforeScenario
+        @BeforeScenario
         public void beforeNormalScenarios() {
         	beforeNormalScenario = true;
         }
 
-        @org.jbehave.core.annotations.BeforeScenario(uponType=ScenarioType.EXAMPLE)
+        @BeforeScenario(uponType=ScenarioType.EXAMPLE)
         public void beforeExampleScenarios() {
             beforeExampleScenario = true;
         }
 
-        @org.jbehave.core.annotations.BeforeScenario(uponType=ScenarioType.ANY)
+        @BeforeScenario(uponType=ScenarioType.ANY)
         public void beforeAnyScenarios() {
             beforeAnyScenario = true;
         }
 
-        @org.jbehave.core.annotations.AfterScenario
+        @AfterScenario
         public void afterNormalScenarios() {
         	afterNormalScenario = true;
         }
 
-        @org.jbehave.core.annotations.AfterScenario(uponType=ScenarioType.EXAMPLE)
+        @AfterScenario(uponType=ScenarioType.EXAMPLE)
         public void afterExampleScenarios() {
             afterExampleScenario = true;
         }
 
-        @org.jbehave.core.annotations.AfterScenario(uponType=ScenarioType.ANY)
+        @AfterScenario(uponType=ScenarioType.ANY)
         public void afterAnyScenarios() {
             afterAnyScenario = true;
         }
 
-        @org.jbehave.core.annotations.AfterScenario(uponOutcome=AfterScenario.Outcome.SUCCESS)
+        @AfterScenario(uponOutcome=AfterScenario.Outcome.SUCCESS)
         public void afterSuccessfulScenarios() {
         	afterSuccessfulScenario = true;
         }
         
-        @org.jbehave.core.annotations.AfterScenario(uponOutcome=AfterScenario.Outcome.FAILURE)
+        @AfterScenario(uponOutcome=AfterScenario.Outcome.FAILURE)
         public void afterFailedScenarios() {
         	afterFailedScenario = true;
         }
@@ -423,20 +433,20 @@ public class StepsBehaviour {
         private int whens;
         private int thens;
 
-        @org.jbehave.core.annotations.Given("a given")
-        @org.jbehave.core.annotations.Alias("a given alias")
+        @Given("a given")
+        @Alias("a given alias")
         public void given() {
             givens++;
         }
 
-        @org.jbehave.core.annotations.When("a when")
-        @org.jbehave.core.annotations.Alias("a when alias")
+        @When("a when")
+        @Alias("a when alias")
         public void when() {
             whens++;
         }
 
-        @org.jbehave.core.annotations.Then("a then")
-        @org.jbehave.core.annotations.Alias("a then alias")
+        @Then("a then")
+        @Alias("a then alias")
         public void then() {
             thens++;
         }
@@ -449,20 +459,20 @@ public class StepsBehaviour {
         private int whens;
         private int thens;
 
-        @org.jbehave.core.annotations.Given("a given")
-        @org.jbehave.core.annotations.Alias("a given alias")
+        @Given("a given")
+        @Alias("a given alias")
         public void given() {
             givens++;
         }
 
-        @org.jbehave.core.annotations.When("a when")
-        @org.jbehave.core.annotations.Alias("a when alias")
+        @When("a when")
+        @Alias("a when alias")
         public void when() {
             whens++;
         }
 
-        @org.jbehave.core.annotations.Then("a then")
-        @org.jbehave.core.annotations.Alias("a then alias")
+        @Then("a then")
+        @Alias("a then alias")
         public void then() {
             thens++;
         }
@@ -471,7 +481,7 @@ public class StepsBehaviour {
 
     static class BeforeSteps extends Steps {
         
-        @org.jbehave.core.annotations.BeforeScenario
+        @BeforeScenario
         public void beforeScenario() {
             throw new RuntimeException("Damn, I failed!");
         }
@@ -480,7 +490,7 @@ public class StepsBehaviour {
 
     static class AfterSteps extends Steps {
 
-        @org.jbehave.core.annotations.AfterScenario
+        @AfterScenario
         public void afterScenario() {
             throw new RuntimeException("Damn, I failed!");
         }
@@ -489,11 +499,11 @@ public class StepsBehaviour {
 
     static class DuplicateSteps extends Steps {
         
-        @org.jbehave.core.annotations.Given("a given")
+        @Given("a given")
         public void given() {
         }
 
-        @org.jbehave.core.annotations.Given("a given")
+        @Given("a given")
         public void duplicateGiven() {
         }
                 
@@ -509,17 +519,17 @@ public class StepsBehaviour {
         	super(configuration);
 		}
 
-		@org.jbehave.core.annotations.Given("un dato che")
+		@Given("un dato che")
         public void given() {
             givens++;
         }
 
-        @org.jbehave.core.annotations.When("un quando")
+        @When("un quando")
         public void when() {
             whens++;
         }
 
-        @org.jbehave.core.annotations.Then("un allora")
+        @Then("un allora")
         public void then() {
             thens++;
         }

@@ -29,29 +29,22 @@ public class HtmlOutput extends PrintStreamOutput {
         this(output, outputPatterns, new LocalizedKeywords());
     }
     
-	public HtmlOutput(PrintStream output, Keywords keywords) {
-		this(output, new Properties(), keywords);
-	}
-	
-	public HtmlOutput(PrintStream output, Properties outputPatterns, Keywords keywords) {
-		this(output, outputPatterns, keywords, false);
-	}
+    public HtmlOutput(PrintStream output, Keywords keywords) {
+        this(output, new Properties(), keywords);
+    }
+
+    public HtmlOutput(PrintStream output, Properties outputPatterns, Keywords keywords) {
+        this(output, outputPatterns, keywords, false);
+    }
 
     public HtmlOutput(PrintStream output, Properties outputPatterns,
             Keywords keywords, boolean reportFailureTrace) {
-        this(output, mergeWithDefault(outputPatterns), keywords, reportFailureTrace, false);
+        this(output, outputPatterns, keywords, reportFailureTrace, false);
     }
 
     public HtmlOutput(PrintStream output, Properties outputPatterns,
             Keywords keywords, boolean reportFailureTrace, boolean compressFailureTrace) {
-        super(HTML, output, mergeWithDefault(outputPatterns), keywords, reportFailureTrace, compressFailureTrace);
-    }
-
-    private static Properties mergeWithDefault(Properties outputPatterns) {
-        Properties patterns = defaultHtmlPatterns();
-        // override any default pattern
-        patterns.putAll(outputPatterns);
-        return patterns;
+        super(HTML, output, defaultHtmlPatterns(), outputPatterns, keywords, reportFailureTrace, compressFailureTrace);
     }
 
     private static Properties defaultHtmlPatterns() {
@@ -66,15 +59,18 @@ public class HtmlOutput extends PrintStreamOutput {
         patterns.setProperty("metaEnd", "</div>\n");
         patterns.setProperty("filter", "<div class=\"filter\">{0}</div>\n");        
         patterns.setProperty("narrative", "<div class=\"narrative\"><h2>{0}</h2>\n<div class=\"element inOrderTo\"><span class=\"keyword inOrderTo\">{1}</span> {2}</div>\n<div class=\"element asA\"><span class=\"keyword asA\">{3}</span> {4}</div>\n<div class=\"element iWantTo\"><span class=\"keyword iWantTo\">{5}</span> {6}</div>\n</div>\n");        
-        patterns.setProperty("lifecycleStart", "<div class=\"lifecycle\"><h2>{0}</h2>");
-        patterns.setProperty("lifecycleEnd", "</div>");        
-        patterns.setProperty("lifecycleBeforeStart", "<div class=\"before\"><h3>{0}</h3>");
-        patterns.setProperty("lifecycleBeforeEnd", "</div>");        
-        patterns.setProperty("lifecycleAfterStart", "<div class=\"after\"><h3>{0}</h3>");
-        patterns.setProperty("lifecycleAfterEnd", "</div>");   
-        patterns.setProperty("lifecycleOutcome", "<div class=\"outcome\">{0} {1}</div>");
-        patterns.setProperty("lifecycleMetaFilter", "<div class=\"metaFilter step\">{0} {1}</div>");
-        patterns.setProperty("lifecycleStep", "<div class=\"step\">{0}</div>\n");          
+        patterns.setProperty("lifecycleStart", "<div class=\"lifecycle\"><h2>{0}</h2>\n");
+        patterns.setProperty("lifecycleEnd", "</div>\n");
+        patterns.setProperty("lifecycleBeforeStart", "<div class=\"before\"><h3>{0}</h3>\n");
+        patterns.setProperty("lifecycleBeforeEnd", "</div>\n");
+        patterns.setProperty("lifecycleAfterStart", "<div class=\"after\"><h3>{0}</h3>\n");
+        patterns.setProperty("lifecycleAfterEnd", "</div>\n");
+        patterns.setProperty("lifecycleScopeStart", "<div class=\"scope\"><h3>{0} {1}</h3>\n");
+        patterns.setProperty("lifecycleScopeEnd", "</div>\n");
+        patterns.setProperty("lifecycleOutcomeStart", "<div class=\"outcome\"><h3>{0} {1}</h3>\n");
+        patterns.setProperty("lifecycleOutcomeEnd", "</div>\n");
+        patterns.setProperty("lifecycleMetaFilter", "<div class=\"metaFilter step\">{0} {1}</div>\n");
+        patterns.setProperty("lifecycleStep", "<div class=\"step\">{0}</div>\n");
         patterns.setProperty("beforeScenario", "<div class=\"scenario\">\n<h2>{0} {1}</h2>\n");
         patterns.setProperty("afterScenario", "</div>\n");
         patterns.setProperty("afterScenarioWithFailure", "<pre class=\"failure\">{0}</pre>\n</div>\n");
@@ -84,6 +80,7 @@ public class HtmlOutput extends PrintStreamOutput {
         patterns.setProperty("givenStoriesEnd", "</div>\n");
         patterns.setProperty("successful", "<div class=\"step successful\">{0}</div>\n");
         patterns.setProperty("ignorable", "<div class=\"step ignorable\">{0}</div>\n");
+        patterns.setProperty("comment", "<div class=\"comment\">{0}</div>\n");
         patterns.setProperty("pending", "<div class=\"step pending\">{0} <span class=\"keyword pending\">({1})</span></div>\n");
         patterns.setProperty("notPerformed", "<div class=\"step notPerformed\">{0} <span class=\"keyword notPerformed\">({1})</span></div>\n");
         patterns.setProperty("failed", "<div class=\"step failed\">{0} <span class=\"keyword failed\">({1})</span><br/><span class=\"message failed\">{2}</span></div>\n");
@@ -118,5 +115,4 @@ public class HtmlOutput extends PrintStreamOutput {
         patterns.setProperty("parameterValueNewline", "<br/>");
         return patterns;
     }
-
 }

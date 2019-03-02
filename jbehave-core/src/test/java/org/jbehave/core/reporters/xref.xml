@@ -18,132 +18,20 @@
             <property name="+theme" value="testing"/>
           </properties>
         </meta>
-        <givenStories>
-          <givenStories/>
-          <givenStoriesAsString></givenStoriesAsString>
-          <examplesTable>
-            <tableAsString></tableAsString>
-            <headerSeparator>|</headerSeparator>
-            <valueSeparator>|</valueSeparator>
-            <ignorableSeparator>|--</ignorableSeparator>
-            <tableTransformers>
-              <transformers>
-                <entry>
-                  <string>FORMATTING</string>
-                  <formatting/>
-                </entry>
-                <entry>
-                  <string>REPLACING</string>
-                  <replacing/>
-                </entry>
-                <entry>
-                  <string>FROM_LANDSCAPE</string>
-                  <fromLandscape/>
-                </entry>
-              </transformers>
-            </tableTransformers>
-            <headers/>
-            <data/>
-            <properties>
-              <property name="headerSeparator" value="|"/>
-              <property name="valueSeparator" value="|"/>
-              <property name="ignorableSeparator" value="|--"/>
-            </properties>
-            <propertiesAsString></propertiesAsString>
-            <namedParameters/>
-            <trim>true</trim>
-          </examplesTable>
-        </givenStories>
-        <lifecycle>
-          <before>
-            <steps class="java.util.Arrays$ArrayList">
-              <a class="string-array"/>
-            </steps>
-          </before>
-          <after/>
-        </lifecycle>
         <scenarios/>
       </story>
-      <localizedNarrative>In order to renovate my house
-As a customer
-I want to get a loan</localizedNarrative>
+      <givenStory>false</givenStory>
       <allowed>false</allowed>
+      <timing>
+        <durationInMillis>0</durationInMillis>
+        <start>0</start>
+        <end>0</end>
+      </timing>
       <givenStories/>
+      <beforeSteps/>
       <scenarios>
         <performableScenario>
           <scenario>
-            <title></title>
-            <meta>
-              <properties/>
-            </meta>
-            <givenStories>
-              <givenStories/>
-              <givenStoriesAsString></givenStoriesAsString>
-              <examplesTable>
-                <tableAsString></tableAsString>
-                <headerSeparator>|</headerSeparator>
-                <valueSeparator>|</valueSeparator>
-                <ignorableSeparator>|--</ignorableSeparator>
-                <tableTransformers>
-                  <transformers>
-                    <entry>
-                      <string>FORMATTING</string>
-                      <formatting/>
-                    </entry>
-                    <entry>
-                      <string>REPLACING</string>
-                      <replacing/>
-                    </entry>
-                    <entry>
-                      <string>FROM_LANDSCAPE</string>
-                      <fromLandscape/>
-                    </entry>
-                  </transformers>
-                </tableTransformers>
-                <headers/>
-                <data/>
-                <properties>
-                  <property name="headerSeparator" value="|"/>
-                  <property name="valueSeparator" value="|"/>
-                  <property name="ignorableSeparator" value="|--"/>
-                </properties>
-                <propertiesAsString></propertiesAsString>
-                <namedParameters/>
-                <trim>true</trim>
-              </examplesTable>
-            </givenStories>
-            <examplesTable>
-              <tableAsString></tableAsString>
-              <headerSeparator>|</headerSeparator>
-              <valueSeparator>|</valueSeparator>
-              <ignorableSeparator>|--</ignorableSeparator>
-              <tableTransformers>
-                <transformers>
-                  <entry>
-                    <string>FORMATTING</string>
-                    <formatting/>
-                  </entry>
-                  <entry>
-                    <string>REPLACING</string>
-                    <replacing/>
-                  </entry>
-                  <entry>
-                    <string>FROM_LANDSCAPE</string>
-                    <fromLandscape/>
-                  </entry>
-                </transformers>
-              </tableTransformers>
-              <headers/>
-              <data/>
-              <properties>
-                <property name="headerSeparator" value="|"/>
-                <property name="valueSeparator" value="|"/>
-                <property name="ignorableSeparator" value="|--"/>
-              </properties>
-              <propertiesAsString></propertiesAsString>
-              <namedParameters/>
-              <trim>true</trim>
-            </examplesTable>
             <steps class="java.util.Arrays$ArrayList">
               <a class="string-array">
                 <string></string>
@@ -152,7 +40,12 @@ I want to get a loan</localizedNarrative>
           </scenario>
           <storyPath>/path/to/story</storyPath>
           <allowed>false</allowed>
-          <normalPerformableScenario>
+          <timing>
+            <durationInMillis>0</durationInMillis>
+            <start>0</start>
+            <end>0</end>
+          </timing>
+          <normalScenario>
             <parameters/>
             <givenStories/>
             <beforeSteps/>
@@ -166,172 +59,18 @@ I want to get a loan</localizedNarrative>
               </matches>
             </steps>
             <afterSteps/>
-            <scenario>
-              <title></title>
-              <meta>
-                <properties/>
-              </meta>
-              <givenStories>
-                <givenStories/>
-                <givenStoriesAsString></givenStoriesAsString>
-                <examplesTable>
-                  <tableAsString></tableAsString>
-                  <headerSeparator>|</headerSeparator>
-                  <valueSeparator>|</valueSeparator>
-                  <ignorableSeparator>|--</ignorableSeparator>
-                  <tableTransformers>
-                    <transformers>
-                      <entry>
-                        <string>FORMATTING</string>
-                        <formatting/>
-                      </entry>
-                      <entry>
-                        <string>REPLACING</string>
-                        <replacing/>
-                      </entry>
-                      <entry>
-                        <string>FROM_LANDSCAPE</string>
-                        <fromLandscape/>
-                      </entry>
-                    </transformers>
-                  </tableTransformers>
-                  <headers/>
-                  <data/>
-                  <properties>
-                    <property name="headerSeparator" value="|"/>
-                    <property name="valueSeparator" value="|"/>
-                    <property name="ignorableSeparator" value="|--"/>
-                  </properties>
-                  <propertiesAsString></propertiesAsString>
-                  <namedParameters/>
-                  <trim>true</trim>
-                </examplesTable>
-              </givenStories>
-              <examplesTable>
-                <tableAsString></tableAsString>
-                <headerSeparator>|</headerSeparator>
-                <valueSeparator>|</valueSeparator>
-                <ignorableSeparator>|--</ignorableSeparator>
-                <tableTransformers>
-                  <transformers>
-                    <entry>
-                      <string>FORMATTING</string>
-                      <formatting/>
-                    </entry>
-                    <entry>
-                      <string>REPLACING</string>
-                      <replacing/>
-                    </entry>
-                    <entry>
-                      <string>FROM_LANDSCAPE</string>
-                      <fromLandscape/>
-                    </entry>
-                  </transformers>
-                </tableTransformers>
-                <headers/>
-                <data/>
-                <properties>
-                  <property name="headerSeparator" value="|"/>
-                  <property name="valueSeparator" value="|"/>
-                  <property name="ignorableSeparator" value="|--"/>
-                </properties>
-                <propertiesAsString></propertiesAsString>
-                <namedParameters/>
-                <trim>true</trim>
-              </examplesTable>
-              <steps class="java.util.Arrays$ArrayList">
-                <a class="string-array">
-                  <string></string>
-                </a>
-              </steps>
-            </scenario>
-          </normalPerformableScenario>
-          <examplePerformableScenarios/>
+            <storyAndScenarioMeta>
+              <properties/>
+            </storyAndScenarioMeta>
+          </normalScenario>
         </performableScenario>
       </scenarios>
-      <beforeSteps/>
       <afterSteps/>
-      <timing>
-        <durationInMillis>0</durationInMillis>
-      </timing>
-      <givenStory>false</givenStory>
     </performableStory>
   </stories>
   <scenarios>
     <performableScenario>
       <scenario>
-        <title></title>
-        <meta>
-          <properties/>
-        </meta>
-        <givenStories>
-          <givenStories/>
-          <givenStoriesAsString></givenStoriesAsString>
-          <examplesTable>
-            <tableAsString></tableAsString>
-            <headerSeparator>|</headerSeparator>
-            <valueSeparator>|</valueSeparator>
-            <ignorableSeparator>|--</ignorableSeparator>
-            <tableTransformers>
-              <transformers>
-                <entry>
-                  <string>FORMATTING</string>
-                  <formatting/>
-                </entry>
-                <entry>
-                  <string>REPLACING</string>
-                  <replacing/>
-                </entry>
-                <entry>
-                  <string>FROM_LANDSCAPE</string>
-                  <fromLandscape/>
-                </entry>
-              </transformers>
-            </tableTransformers>
-            <headers/>
-            <data/>
-            <properties>
-              <property name="headerSeparator" value="|"/>
-              <property name="valueSeparator" value="|"/>
-              <property name="ignorableSeparator" value="|--"/>
-            </properties>
-            <propertiesAsString></propertiesAsString>
-            <namedParameters/>
-            <trim>true</trim>
-          </examplesTable>
-        </givenStories>
-        <examplesTable>
-          <tableAsString></tableAsString>
-          <headerSeparator>|</headerSeparator>
-          <valueSeparator>|</valueSeparator>
-          <ignorableSeparator>|--</ignorableSeparator>
-          <tableTransformers>
-            <transformers>
-              <entry>
-                <string>FORMATTING</string>
-                <formatting/>
-              </entry>
-              <entry>
-                <string>REPLACING</string>
-                <replacing/>
-              </entry>
-              <entry>
-                <string>FROM_LANDSCAPE</string>
-                <fromLandscape/>
-              </entry>
-            </transformers>
-          </tableTransformers>
-          <headers/>
-          <data/>
-          <properties>
-            <property name="headerSeparator" value="|"/>
-            <property name="valueSeparator" value="|"/>
-            <property name="ignorableSeparator" value="|--"/>
-          </properties>
-          <propertiesAsString></propertiesAsString>
-          <namedParameters/>
-          <trim>true</trim>
-        </examplesTable>
         <steps class="java.util.Arrays$ArrayList">
           <a class="string-array">
             <string></string>
@@ -340,7 +79,12 @@ I want to get a loan</localizedNarrative>
       </scenario>
       <storyPath>/path/to/story</storyPath>
       <allowed>false</allowed>
-      <normalPerformableScenario>
+      <timing>
+        <durationInMillis>0</durationInMillis>
+        <start>0</start>
+        <end>0</end>
+      </timing>
+      <normalScenario>
         <parameters/>
         <givenStories/>
         <beforeSteps/>
@@ -354,87 +98,10 @@ I want to get a loan</localizedNarrative>
           </matches>
         </steps>
         <afterSteps/>
-        <scenario>
-          <title></title>
-          <meta>
-            <properties/>
-          </meta>
-          <givenStories>
-            <givenStories/>
-            <givenStoriesAsString></givenStoriesAsString>
-            <examplesTable>
-              <tableAsString></tableAsString>
-              <headerSeparator>|</headerSeparator>
-              <valueSeparator>|</valueSeparator>
-              <ignorableSeparator>|--</ignorableSeparator>
-              <tableTransformers>
-                <transformers>
-                  <entry>
-                    <string>FORMATTING</string>
-                    <formatting/>
-                  </entry>
-                  <entry>
-                    <string>REPLACING</string>
-                    <replacing/>
-                  </entry>
-                  <entry>
-                    <string>FROM_LANDSCAPE</string>
-                    <fromLandscape/>
-                  </entry>
-                </transformers>
-              </tableTransformers>
-              <headers/>
-              <data/>
-              <properties>
-                <property name="headerSeparator" value="|"/>
-                <property name="valueSeparator" value="|"/>
-                <property name="ignorableSeparator" value="|--"/>
-              </properties>
-              <propertiesAsString></propertiesAsString>
-              <namedParameters/>
-              <trim>true</trim>
-            </examplesTable>
-          </givenStories>
-          <examplesTable>
-            <tableAsString></tableAsString>
-            <headerSeparator>|</headerSeparator>
-            <valueSeparator>|</valueSeparator>
-            <ignorableSeparator>|--</ignorableSeparator>
-            <tableTransformers>
-              <transformers>
-                <entry>
-                  <string>FORMATTING</string>
-                  <formatting/>
-                </entry>
-                <entry>
-                  <string>REPLACING</string>
-                  <replacing/>
-                </entry>
-                <entry>
-                  <string>FROM_LANDSCAPE</string>
-                  <fromLandscape/>
-                </entry>
-              </transformers>
-            </tableTransformers>
-            <headers/>
-            <data/>
-            <properties>
-              <property name="headerSeparator" value="|"/>
-              <property name="valueSeparator" value="|"/>
-              <property name="ignorableSeparator" value="|--"/>
-            </properties>
-            <propertiesAsString></propertiesAsString>
-            <namedParameters/>
-            <trim>true</trim>
-          </examplesTable>
-          <steps class="java.util.Arrays$ArrayList">
-            <a class="string-array">
-              <string></string>
-            </a>
-          </steps>
-        </scenario>
-      </normalPerformableScenario>
-      <examplePerformableScenarios/>
+        <storyAndScenarioMeta>
+          <properties/>
+        </storyAndScenarioMeta>
+      </normalScenario>
     </performableScenario>
   </scenarios>
 </xref>

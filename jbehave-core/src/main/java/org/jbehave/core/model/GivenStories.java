@@ -6,37 +6,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class GivenStories {
-    
+
     public static final GivenStories EMPTY = new GivenStories("");
 
-    private final List<GivenStory> givenStories = new ArrayList<GivenStory>();
-    private final String givenStoriesAsString;
-    private ExamplesTable examplesTable = ExamplesTable.EMPTY;
+    private final List<GivenStory> stories = new ArrayList<>();
+    private final String asString;
+    private ExamplesTable examplesTable;
 
-    public GivenStories(String givenStoriesAsString) {
-        this.givenStoriesAsString = givenStoriesAsString;
-        if ( !StringUtils.isBlank(givenStoriesAsString) ){
-            parse();            
-        }
-    }
-
-    private void parse() {
-        givenStories.clear();
-        for (String storyPath : givenStoriesAsString.split(",", -1)) {
-            givenStories.add(new GivenStory(storyPath));
+    public GivenStories(String asString) {
+        this.asString = asString;
+        for (String path : asString.split(",")) {
+            if (StringUtils.isNotBlank(path)) {
+                stories.add(new GivenStory(path));
+            }
         }
     }
 
     public List<GivenStory> getStories() {
-        for (GivenStory givenStory : givenStories) {            
-            givenStory.useParameters(parametersByAnchor(givenStory.getAnchor()));
+        for (GivenStory story : stories) {
+            story.useParameters(parametersByAnchor(story.getAnchor()));
         }
-        return givenStories;
+        return stories;
     }
 
     private Map<String, String> parametersByAnchor(String anchor) {
@@ -49,26 +44,26 @@ public class GivenStories {
             }
         }
         Map<String, String> parameters = null;
-        if ( examplesRow > -1 && examplesRow < examplesTable.getRowCount() ){
+        if ( examplesRow > -1 && examplesTable != null && examplesRow < examplesTable.getRowCount() ){
              parameters = examplesTable.getRow(examplesRow);
         }
         if ( parameters == null ){
-            return new HashMap<String, String>();
+            return new HashMap<>();
         }
         return parameters;
     }
 
     public List<String> getPaths() {
-        List<String> paths = new ArrayList<String>();
-        for (GivenStory story : givenStories) {
+        List<String> paths = new ArrayList<>();
+        for (GivenStory story : stories) {
             paths.add(story.asString().trim());
         }
         return Collections.unmodifiableList(paths);
     }
 
     public boolean requireParameters() {
-        for (GivenStory givenStory : givenStories) {
-            if ( givenStory.hasAnchor() ){
+        for (GivenStory story : stories) {
+            if ( story.hasAnchor() ){
                 return true;
             }
         }
@@ -80,12 +75,11 @@ public class GivenStories {
     }
     
     public String asString() {
-        return givenStoriesAsString;
+        return asString;
     }
 
+    @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
-
-
 }

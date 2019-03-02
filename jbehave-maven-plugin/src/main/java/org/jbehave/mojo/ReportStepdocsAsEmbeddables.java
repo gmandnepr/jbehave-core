@@ -1,6 +1,5 @@
 package org.jbehave.mojo;
 
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.jbehave.core.Embeddable;
 import org.jbehave.core.configuration.Configuration;
@@ -16,7 +15,8 @@ import org.jbehave.core.steps.CandidateSteps;
  */
 public class ReportStepdocsAsEmbeddables extends AbstractEmbedderMojo {
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    @Override
+    public void execute() throws MojoFailureException {
         Embedder embedder = newEmbedder();
         getLog().info("Reporting stepdocs as embeddables using embedder " + embedder);
         try {

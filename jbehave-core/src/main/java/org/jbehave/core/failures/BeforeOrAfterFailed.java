@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import static java.text.MessageFormat.format;
 
@@ -21,7 +21,7 @@ public class BeforeOrAfterFailed extends RuntimeException {
     }
 
     private static String toAnnotationNames(Annotation[] annotations) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (Annotation annotation : annotations) {
             names.add("@"+annotation.annotationType().getSimpleName());
         }

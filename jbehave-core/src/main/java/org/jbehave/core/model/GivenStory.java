@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import static java.util.regex.Pattern.DOTALL;
 import static java.util.regex.Pattern.compile;
@@ -17,7 +17,7 @@ public class GivenStory {
     private static final String PATH_REGEX = "(.*)\\#\\{(.*?)\\}";
     private static final String PARAMETERS_REGEX = ".*(\\:|\\;).*";
     private final String givenStoryAsString;
-    private Map<String, String> parameters = new HashMap<String, String>();
+    private Map<String, String> parameters = new HashMap<>();
     private String path;
     private String anchor;
 
@@ -55,7 +55,7 @@ public class GivenStory {
     }
 
     public Map<String, String> getAnchorParameters() {
-        Map<String,String> parameters = new HashMap<String, String>();
+        Map<String,String> parameters = new HashMap<>();
         for ( String pair : anchor.trim().split(";") ){
             String[] split = pair.split(":");
             if ( split.length > 1 ){

@@ -13,9 +13,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.model.Meta;
 import org.jbehave.core.model.Meta.Property;
 
@@ -163,11 +163,13 @@ public class MetaFilter {
             return exclude;
         }
 
+        @Override
         public void parse(String filterAsString) {
             parse(include, "+");
             parse(exclude, "-");
         }
 
+        @Override
         public boolean match(Meta meta) {
             boolean matched;
             if (!include.isEmpty() && exclude.isEmpty()) {
@@ -192,7 +194,7 @@ public class MetaFilter {
 
         private Set<String> found(String prefix) {
             Matcher matcher = findAllPrefixed(prefix).matcher(filterAsString);
-            Set<String> found = new HashSet<String>();
+            Set<String> found = new HashSet<>();
             while (matcher.find()) {
                 found.add(matcher.group().trim());
             }
@@ -204,7 +206,7 @@ public class MetaFilter {
         }
 
         private Properties merge(Properties include, Properties exclude) {
-            Set<Object> in = new HashSet<Object>(include.keySet());
+            Set<Object> in = new HashSet<>(include.keySet());
             in.addAll(exclude.keySet());
             Properties merged = new Properties();
             for (Object key : in) {
@@ -248,6 +250,7 @@ public class MetaFilter {
         private Field metaField;
         private Method match;
 
+        @Override
         public void parse(String filterAsString) {
             String groovyString = "public class GroovyMatcher {\n" +
                     "public org.jbehave.core.model.Meta meta\n" +
@@ -278,6 +281,7 @@ public class MetaFilter {
             }
         }
 
+        @Override
         public boolean match(Meta meta) {
             try {
                 Object matcher = groovyClass.newInstance();

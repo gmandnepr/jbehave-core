@@ -1,21 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:context="http://www.springframework.org/schema/context"
+  xmlns:tx="http://www.springframework.org/schema/tx"
   xsi:schemaLocation="http://www.springframework.org/schema/beans 
-           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+           http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
            http://www.springframework.org/schema/context
-           http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+           http://www.springframework.org/schema/context/spring-context-4.3.xsd
+           http://www.springframework.org/schema/tx
+           http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
 
   <context:annotation-config />
 
   <context:component-scan base-package="org.jbehave.example.spring.security" />
 
+  <tx:annotation-driven/>
+
   <bean id="authenticationManager" class="org.springframework.security.authentication.ProviderManager">
     <constructor-arg ref="authenticationProvider"/>
+    <property name="authenticationEventPublisher">
+      <bean class="org.springframework.security.authentication.DefaultAuthenticationEventPublisher" />
+    </property>
   </bean>
 
   <bean id="authenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
     <property name="passwordEncoder" ref="shaPasswordEncoder"/>
+    <property name="saltSource">
+      <bean class="org.springframework.security.authentication.dao.SystemWideSaltSource">
+        <property name="systemWideSalt" value="jb3h4v3"/>
+      </bean>
+    </property>
     <property name="userDetailsService" ref="userDetailsService"/>
   </bean>
 
@@ -36,8 +49,12 @@
     <property name="password" value="" />
   </bean>
 
+  <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource"/>
+  </bean>
+
   <bean id="sessionFactory"
-    class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+    class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
     <property name="dataSource" ref="dataSource" />
     <property name="hibernateProperties">
       <props>

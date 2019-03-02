@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jbehave.core.annotations.ScenarioType;
+import org.jbehave.core.annotations.Scope;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.failures.FailureStrategy;
@@ -45,17 +46,18 @@ import static org.codehaus.plexus.util.StringUtils.capitalizeFirstLetter;
  * @author Paul Hammant
  * @deprecated Replaced by {@link PerformableTree}.  Kept only to facilitate the comparison with 3.x.
  */
+@Deprecated
 public class StoryRunner {
 
-    private ThreadLocal<FailureStrategy> currentStrategy = new ThreadLocal<FailureStrategy>();
-    private ThreadLocal<FailureStrategy> failureStrategy = new ThreadLocal<FailureStrategy>();
-    private ThreadLocal<PendingStepStrategy> pendingStepStrategy = new ThreadLocal<PendingStepStrategy>();
-    private ThreadLocal<UUIDExceptionWrapper> storyFailure = new ThreadLocal<UUIDExceptionWrapper>();
-    private ThreadLocal<StoryReporter> reporter = new ThreadLocal<StoryReporter>();
-    private ThreadLocal<String> reporterStoryPath = new ThreadLocal<String>();
-    private ThreadLocal<State> storiesState = new ThreadLocal<State>();
+    private ThreadLocal<FailureStrategy> currentStrategy = new ThreadLocal<>();
+    private ThreadLocal<FailureStrategy> failureStrategy = new ThreadLocal<>();
+    private ThreadLocal<PendingStepStrategy> pendingStepStrategy = new ThreadLocal<>();
+    private ThreadLocal<UUIDExceptionWrapper> storyFailure = new ThreadLocal<>();
+    private ThreadLocal<StoryReporter> reporter = new ThreadLocal<>();
+    private ThreadLocal<String> reporterStoryPath = new ThreadLocal<>();
+    private ThreadLocal<State> storiesState = new ThreadLocal<>();
     // should this be volatile?
-    private Map<Story, StoryDuration> cancelledStories = new HashMap<Story, StoryDuration>();
+    private Map<Story, StoryDuration> cancelledStories = new HashMap<>();
 
     /**
      * Run steps before or after a collection of stories. Steps are execute only
@@ -179,7 +181,7 @@ public class StoryRunner {
         if (beforeStories != null) {
             context.stateIs(beforeStories);
         }
-        Map<String, String> storyParameters = new HashMap<String, String>();
+        Map<String, String> storyParameters = new HashMap<>();
         run(context, story, storyParameters);
     }
 
@@ -313,6 +315,7 @@ public class StoryRunner {
                 if (failureOccurred(context) && context.configuration().storyControls().skipScenariosAfterFailure()) {
                     continue;
                 }
+                reporter.get().beforeScenario(scenario);
                 reporter.get().beforeScenario(scenario.getTitle());
                 reporter.get().scenarioMeta(scenario.getMeta());
 
@@ -425,13 +428,13 @@ public class StoryRunner {
 
     private Story storyWithMatchingScenarios(Story story, Map<String,String> parameters) {
         if ( parameters.isEmpty() ) return story;
-        List<Scenario> scenarios = new ArrayList<Scenario>();
+        List<Scenario> scenarios = new ArrayList<>();
         for ( Scenario scenario : story.getScenarios() ){
             if ( matchesParameters(scenario, parameters) ){
                 scenarios.add(scenario);
             }
         }
-        return new Story(story.getPath(), story.getDescription(), story.getMeta(), story.getNarrative(), scenarios); 
+        return story.cloneWithScenarios(scenarios);
     }
 
     private boolean matchesParameters(Scenario scenario, Map<String, String> parameters) {
@@ -453,12 +456,15 @@ public class StoryRunner {
         ExamplesTable table = scenario.getExamplesTable();
         reporter.get().beforeExamples(scenario.getSteps(), table);
     	Keywords keywords = context.configuration().keywords();
-        for (Map<String, String> scenarioParameters : table.getRows()) {
+        List<Map<String, String>> rows = table.getRows();
+        for (int exampleIndex = 0; exampleIndex < rows.size(); exampleIndex++) {
+            Map<String, String> scenarioParameters = rows.get(exampleIndex);
 			Meta parameterMeta = parameterMeta(keywords, scenarioParameters);
 			if ( !parameterMeta.isEmpty() && !context.filter.allow(parameterMeta) ){
 				continue;
 			}
             reporter.get().example(scenarioParameters);
+            reporter.get().example(scenarioParameters, exampleIndex);
             if (context.configuration().storyControls().resetStateBeforeScenario()) {
                 context.resetState();
             }
@@ -518,7 +524,7 @@ public class StoryRunner {
     }
 
     private void generatePendingStepMethods(RunContext context, List<Step> steps) {
-        List<PendingStep> pendingSteps = new ArrayList<PendingStep>();
+        List<PendingStep> pendingSteps = new ArrayList<>();
         for (Step step : steps) {
             if (step instanceof PendingStep) {
                 pendingSteps.add((PendingStep) step);
@@ -526,7 +532,7 @@ public class StoryRunner {
         }
         if (!pendingSteps.isEmpty()) {
             PendingStepMethodGenerator generator = new PendingStepMethodGenerator(context.configuration().keywords());
-            List<String> methods = new ArrayList<String>();
+            List<String> methods = new ArrayList<>();
             for (PendingStep pendingStep : pendingSteps) {
                 if (!pendingStep.annotated()) {
                     methods.add(generator.generateMethod(pendingStep));
@@ -559,6 +565,7 @@ public class StoryRunner {
 
     private final class FineSoFar implements State {
 
+        @Override
         public State run(Step step) {
             if ( step instanceof ParametrisedStep ){
                 ((ParametrisedStep)step).describeTo(reporter.get());
@@ -598,6 +605,7 @@ public class StoryRunner {
             this.failure = failure;
         }
 
+        @Override
         public State run(Step step) {
             StepResult result = step.doNotPerform(failure);
             result.describeTo(reporter.get());
@@ -689,7 +697,7 @@ public class StoryRunner {
         }
 
         public List<Step> collectLifecycleSteps(Lifecycle lifecycle, Meta storyAndScenarioMeta, Stage stage) {
-            return configuration.stepCollector().collectLifecycleSteps(candidateSteps, lifecycle, storyAndScenarioMeta, stage);
+            return configuration.stepCollector().collectLifecycleSteps(candidateSteps, lifecycle, storyAndScenarioMeta, stage, Scope.SCENARIO);
         }
 
         public List<Step> collectScenarioSteps(Scenario scenario, Map<String, String> parameters) {

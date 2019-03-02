@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  *  Groups a set of {@link Story}s by meta filter. 
@@ -25,11 +25,11 @@ public class StoryMap {
     }
     
     public List<Story> getStories(){
-        return new ArrayList<Story>(stories);
+        return new ArrayList<>(stories);
     }
     
     public List<String> getStoryPaths() {
-        List<String> paths = new ArrayList<String>();
+        List<String> paths = new ArrayList<>();
         for (Story story : stories) {
             paths.add(story.getPath());
         }

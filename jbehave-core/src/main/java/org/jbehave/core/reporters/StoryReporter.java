@@ -35,19 +35,45 @@ public interface StoryReporter {
 
     void scenarioNotAllowed(Scenario scenario, String filter);
 
+    void beforeScenario(Scenario scenario);
+
+    /**
+     * @deprecated use {@link #beforeScenario(Scenario)}
+     *
+     * @param scenarioTitle Scenario title
+     */
+    @Deprecated
     void beforeScenario(String scenarioTitle);
-    
+
+    /**
+     * @deprecated use {@link #beforeScenario(Scenario)}
+     *
+     * @param meta Scenario meta
+     */
+    @Deprecated
     void scenarioMeta(Meta meta);
 
     void afterScenario();
 
+    void beforeGivenStories();
+
     void givenStories(GivenStories givenStories);
 
-	void givenStories(List<String> storyPaths);
+    void givenStories(List<String> storyPaths);
+
+    void afterGivenStories();
 
     void beforeExamples(List<String> steps, ExamplesTable table);
 
+    /**
+     * @deprecated use {@link #example(Map, int)}
+     *
+     * @param tableRow Example table row
+     */
+    @Deprecated
     void example(Map<String, String> tableRow);
+
+    void example(Map<String, String> tableRow, int exampleIndex);
 
     void afterExamples();
 
@@ -57,13 +83,15 @@ public interface StoryReporter {
 
     void ignorable(String step);
 
+    void comment(String step);
+
     void pending(String step);
 
     void notPerformed(String step);
 
     void failed(String step, Throwable cause);
 
-	void failedOutcomes(String step, OutcomesTable table);
+    void failedOutcomes(String step, OutcomesTable table);
 
     void restarted(String step, Throwable cause);
     
@@ -72,6 +100,4 @@ public interface StoryReporter {
     void dryRun();
 
     void pendingMethods(List<String> methods);
-
-
 }

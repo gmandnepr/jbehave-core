@@ -20,11 +20,11 @@ import org.jbehave.core.embedder.StoryControls;
 import org.jbehave.core.failures.SilentlyAbsorbingFailure;
 import org.jbehave.core.i18n.LocalizedKeywords;
 import org.jbehave.core.io.LoadFromURL;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.ParameterConverters;
-import org.jbehave.core.steps.ParameterConverters.ParameterConverter;
-
+import org.jbehave.core.steps.ParameterConverters.AbstractParameterConverter;
 
 @ApplicationScoped
 public class ConfigurationProducer
@@ -38,13 +38,14 @@ public class ConfigurationProducer
         viewResources.setProperty("index", "my-reports-index.ftl");
         viewResources.setProperty("decorateNonHtml", "true");
 
-        
+        TableTransformers tableTransformers = new TableTransformers();
+        LoadFromURL resourceLoader = new LoadFromURL();
         return new MostUsefulConfiguration()
                     .useStoryControls(new StoryControls()
                             .doDryRun(true)
                             .doSkipScenariosAfterFailure(true))
                     .useFailureStrategy(new SilentlyAbsorbingFailure())
-                    .useStoryLoader(new LoadFromURL())
+                    .useStoryLoader(resourceLoader)
                     .useStepPatternParser(new RegexPrefixCapturingPatternParser("MyPrefix"))
                     .useStoryReporterBuilder(new StoryReporterBuilder()
                             .withDefaultFormats()
@@ -52,18 +53,16 @@ public class ConfigurationProducer
                             .withKeywords(new LocalizedKeywords(Locale.ITALIAN))
                             .withRelativeDirectory("my-output-directory")
                             .withViewResources(viewResources).withFailureTrace(true))
-                    .useParameterConverters(new ParameterConverters()
-                            .addConverters(new CustomConverter(),new MyDateConverter()));
+                    .useParameterConverters(new ParameterConverters(resourceLoader, tableTransformers)
+                            .addConverters(new CustomConverter(),new MyDateConverter()))
+                    .useTableTransformers(tableTransformers);
                     
     }
     
-    public static class CustomConverter implements ParameterConverter {
+    public static class CustomConverter extends AbstractParameterConverter<CustomObject> {
 
-        public boolean accept(Type type) {
-            return ((Class<?>) type).isAssignableFrom(CustomObject.class);
-        }
-
-        public Object convertValue(String value, Type type) {
+        @Override
+        public CustomObject convertValue(String value, Type type) {
             return new CustomObject(value);
         }
     }

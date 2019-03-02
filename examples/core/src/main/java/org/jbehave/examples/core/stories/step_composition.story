@@ -18,7 +18,7 @@ Scenario: Using a composite step with normal parameter matching
 !-- @Composite(steps = { "Given <customer> is logged in", 
 !--                      "Given <customer> has a cart", 
 !--                      "When a <product> is added to the cart" }) 
-!-- public void aCompositeStep(@Named("customer") String customer, @Named("product") String product) { // composed steps use these named parameters 
+!-- public void aComposite(@Named("customer") String customer, @Named("product") String product) { // composed steps use these named parameters
 !-- }
 
 Given Mr Jones has previously bought a ticket
@@ -30,7 +30,7 @@ Scenario: Using a composite step in a parameterised scenario
 !-- @Composite(steps = { "Given <customer> is logged in", 
 !--                      "Given <customer> has a cart", 
 !--                      "When a <product> is added to the cart" })
-!-- public void aCompositeStep(@Named("customer") String customer, @Named("product") String product) { // composed steps use these named parameters 
+!-- public void aComposite(@Named("customer") String customer, @Named("product") String product) { // composed steps use these named parameters
 !-- }
 
 Given <customer> has previously bought a <product>
@@ -39,14 +39,3 @@ Examples:
 |customer|product|
 |Mr Jones|ticket|
 
-Scenario: Using a composite step where one of the composed steps is not found.  
-The composed step not found should be reported as pending and the subsequent composed steps not performed.
-
-!-- Annotated method:
-!-- @Given("%customer returns to cart")
-!-- @Composite(steps = { "Given step not found", 
-!--                      "Given <customer> has a cart", })
-!-- public void aCompositeStep(@Named("customer") String customer) { // composed steps use these named parameters 
-!-- }
-
-Given Mr Jones returns to cart

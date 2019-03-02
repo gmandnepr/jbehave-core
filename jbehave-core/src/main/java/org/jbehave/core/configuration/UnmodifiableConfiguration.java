@@ -1,12 +1,13 @@
 package org.jbehave.core.configuration;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.embedder.StoryControls;
 import org.jbehave.core.failures.FailureStrategy;
 import org.jbehave.core.failures.PendingStepStrategy;
 import org.jbehave.core.io.StoryLoader;
 import org.jbehave.core.io.StoryPathResolver;
+import org.jbehave.core.parsers.CompositeParser;
 import org.jbehave.core.parsers.StepPatternParser;
 import org.jbehave.core.parsers.StoryParser;
 import org.jbehave.core.reporters.StoryReporter;
@@ -34,74 +35,97 @@ public class UnmodifiableConfiguration extends Configuration {
     /**
      * @deprecated Use {@link StoryReporterBuilder}
      */
+    @Deprecated
+    @Override
     public StoryReporter defaultStoryReporter() {
         return delegate.defaultStoryReporter();
     }
 
+    @Override
     public StoryParser storyParser() {
         return delegate.storyParser();
+    }
+
+    @Override
+    public CompositeParser compositeParser() {
+        return delegate.compositeParser();
     }
 
     public PendingStepStrategy pendingStepStrategy() {
         return delegate.pendingStepStrategy();
     }
 
+    @Override
     public StepCollector stepCollector() {
         return delegate.stepCollector();
     }
 
+    @Override
     public FailureStrategy failureStrategy() {
         return delegate.failureStrategy();
     }
 
+    @Override
     public Keywords keywords() {
         return delegate.keywords();
     }
 
+    @Override
     public ParameterConverters parameterConverters() {
         return delegate.parameterConverters();
     }
 
+    @Override
     public ParameterControls parameterControls(){
         return delegate.parameterControls();
     }
     
+    @Override
     public Paranamer paranamer() {
         return delegate.paranamer();
     }
 
+    @Override
     public ViewGenerator viewGenerator() {
         return delegate.viewGenerator();
     }
 
+    @Override
     public StepMonitor stepMonitor() {
         return delegate.stepMonitor();
     }
 
+    @Override
     public StepPatternParser stepPatternParser() {
         return delegate.stepPatternParser();
     }
 
+    @Override
     public boolean dryRun() {
         return delegate.dryRun();
     }
 
+    @Override
     public StoryControls storyControls() {
         return delegate.storyControls();
     }
 
+    @Override
     public StoryLoader storyLoader() {
         return delegate.storyLoader();
     }
 
+    @Override
     public StoryPathResolver storyPathResolver() {
         return delegate.storyPathResolver();
     }
 
+    @Override
     public StoryReporter storyReporter(String storyPath) {
         return delegate.storyReporter(storyPath);
     }
 
+    @Override
     public StoryReporterBuilder storyReporterBuilder() {
         return delegate.storyReporterBuilder();
     }
@@ -138,6 +162,11 @@ public class UnmodifiableConfiguration extends Configuration {
 
     @Override
     public Configuration useStoryParser(StoryParser storyParser) {
+        throw notAllowed();
+    }
+
+    @Override
+    public Configuration useCompositeParser(CompositeParser compositeParser) {
         throw notAllowed();
     }
 

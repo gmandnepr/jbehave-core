@@ -4,9 +4,6 @@ import org.jbehave.core.failures.UUIDExceptionWrapper;
 import org.jbehave.core.failures.StepFailed;
 import org.jbehave.core.model.*;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * <p>
  * When a step fails, the {@link Throwable} that caused the failure is wrapped
@@ -17,123 +14,37 @@ import java.util.Map;
  * 
  * @see StepFailed
  */
-public class StepFailureDecorator implements StoryReporter {
+public class StepFailureDecorator extends DelegatingStoryReporter {
 
-	private final StoryReporter delegate;
-	private UUIDExceptionWrapper failure;
+    private UUIDExceptionWrapper failure;
 
     public StepFailureDecorator(StoryReporter delegate) {
-		this.delegate = delegate;
-	}
-
-    public void afterScenario() {
-        delegate.afterScenario();
-	}
-
-	public void afterStory(boolean givenStory) {
-		delegate.afterStory(givenStory);
-		if (failure != null) {
-			throw failure;
-		}
-	}
-
-    public void beforeScenario(String scenarioTitle) {
-        delegate.beforeScenario(scenarioTitle);
-	}
-
-    public void scenarioMeta(Meta meta) {
-        delegate.scenarioMeta(meta);
+        super(delegate);
     }
 
+    @Override
+    public void afterStory(boolean givenStory) {
+        super.afterStory(givenStory);
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    @Override
     public void beforeStory(Story story, boolean givenStory) {
         failure = null;
-        delegate.beforeStory(story, givenStory);
+        super.beforeStory(story, givenStory);
     }
 
-    public void narrative(Narrative narrative) {
-        delegate.narrative(narrative);
-    }
-
-    public void lifecyle(Lifecycle lifecycle) {
-        delegate.lifecyle(lifecycle);
-    }
-
+    @Override
     public void failed(String step, Throwable cause) {
-		failure = (UUIDExceptionWrapper) cause;
-		delegate.failed(step, failure);
-	}
+        failure = (UUIDExceptionWrapper) cause;
+        super.failed(step, failure);
+    }
 
+    @Override
     public void failedOutcomes(String step, OutcomesTable table) {
-		failure = new StepFailed(step, table);
-    	delegate.failedOutcomes(step, table);
+        failure = new StepFailed(step, table);
+        super.failedOutcomes(step, table);
     }
-    
-    public void beforeStep(String step) {
-        delegate.beforeStep(step);
-    }
-
-    public void ignorable(String step) {
-        delegate.ignorable(step);
-    }
-    
-	public void notPerformed(String step) {
-		delegate.notPerformed(step);
-	}
-
-	public void pending(String step) {
-		delegate.pending(step);
-	}
-
-	public void successful(String step) {
-		delegate.successful(step);
-	}
-
-	public void givenStories(GivenStories givenStories) {
-		delegate.givenStories(givenStories);
-	}
-
-    public void givenStories(List<String> storyPaths) {
-        delegate.givenStories(storyPaths);
-    }
-
-    public void beforeExamples(List<String> steps, ExamplesTable table) {
-		delegate.beforeExamples(steps, table);
-	}
-
-	public void example(Map<String, String> tableRow) {
-		delegate.example(tableRow);
-	}
-
-    public void afterExamples() {
-        delegate.afterExamples();        
-    }
-
-    public void scenarioNotAllowed(Scenario scenario, String filter) {
-        delegate.scenarioNotAllowed(scenario, filter);
-    }
-
-    public void storyNotAllowed(Story story, String filter) {
-        delegate.storyNotAllowed(story, filter);
-    }
-
-    public void dryRun() {
-        delegate.dryRun();
-    }
-
-    public void pendingMethods(List<String> methods) {
-        delegate.pendingMethods(methods);
-    }
-
-    public void restarted(String step, Throwable cause) {
-        delegate.restarted(step, cause);
-    }
-    
-    public void restartedStory(Story story, Throwable cause) {
-        delegate.restartedStory(story, cause);
-    }
-
-    public void storyCancelled(Story story, StoryDuration storyDuration) {
-        delegate.storyCancelled(story, storyDuration);
-    }
-
 }

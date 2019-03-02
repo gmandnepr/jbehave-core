@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jbehave.core.annotations.AfterScenario.Outcome;
 import org.jbehave.core.annotations.Given;
 import org.jbehave.core.annotations.Pending;
@@ -14,6 +14,7 @@ import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.configuration.Keywords.StartingWordNotFound;
 import org.jbehave.core.parsers.StepMatcher;
 import org.jbehave.core.parsers.StepPatternParser;
+import org.jbehave.core.steps.context.StepsContext;
 
 import com.thoughtworks.paranamer.Paranamer;
 
@@ -39,8 +40,8 @@ public class StepCandidate {
     private StepMonitor stepMonitor = new SilentStepMonitor();
 
     public StepCandidate(String patternAsString, int priority, StepType stepType, Method method, Class<?> stepsType,
-            InjectableStepsFactory stepsFactory, Keywords keywords, StepPatternParser stepPatternParser,
-            ParameterConverters parameterConverters, ParameterControls parameterControls) {
+            InjectableStepsFactory stepsFactory, StepsContext stepsContext, Keywords keywords,
+            StepPatternParser stepPatternParser, ParameterConverters parameterConverters, ParameterControls parameterControls) {
         this.patternAsString = patternAsString;
         this.priority = priority;
         this.stepType = stepType;
@@ -49,8 +50,8 @@ public class StepCandidate {
         this.stepsFactory = stepsFactory;
         this.keywords = keywords;
         this.stepMatcher = stepPatternParser.parseStep(stepType, patternAsString);
-        this.stepCreator = new StepCreator(stepsType, stepsFactory, parameterConverters, parameterControls,
-                stepMatcher, stepMonitor);
+        this.stepCreator = new StepCreator(stepsType, stepsFactory, stepsContext, parameterConverters,
+                parameterControls, stepMatcher, stepMonitor);
     }
 
     public Method getMethod() {
@@ -66,13 +67,13 @@ public class StepCandidate {
     }
 
     public Object getStepsInstance() {
-        return stepsFactory.createInstanceOfType(stepsType);
+        return stepsFactory != null ? stepsFactory.createInstanceOfType(stepsType) : null;
     }
 
     public Class<?> getStepsType() {
         return stepsType;
     }
-    
+
     public StepType getStepType() {
         return stepType;
     }
@@ -109,14 +110,34 @@ public class StepCandidate {
     public boolean ignore(String stepAsString) {
         try {
             String ignoreWord = keywords.startingWordFor(StepType.IGNORABLE);
-            return keywords.stepStartsWithWord(stepAsString, ignoreWord);
+            return isIgnoredStep(stepAsString, ignoreWord);
         } catch (StartingWordNotFound e) {
             return false;
         }
     }
 
+    public boolean comment(String stepAsString) {
+        try {
+            String ignoreWord = keywords.startingWordFor(StepType.IGNORABLE);
+            return keywords.stepStartsWithWord(stepAsString, ignoreWord) && !isIgnoredStep(stepAsString, ignoreWord);
+        } catch (StartingWordNotFound e) {
+            return false;
+        }
+    }
+
+    private boolean isIgnoredStep(String stepAsString, String ignoreWord) {
+        for (Map.Entry<StepType, String> stepStartingWord : keywords.startingWordsByType().entrySet()) {
+            if (stepStartingWord.getKey() != StepType.IGNORABLE) {
+                if (keywords.stepStartsWithWords(stepAsString, ignoreWord, stepStartingWord.getValue())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public boolean isPending() {
-        return method.isAnnotationPresent(Pending.class);
+        return method != null && method.isAnnotationPresent(Pending.class);
     }
 
     public boolean matches(String stepAsString) {
@@ -126,13 +147,13 @@ public class StepCandidate {
     public boolean matches(String step, String previousNonAndStep) {
         try {
             boolean matchesType = true;
-            if (isAndStep(step)) {
+            if (keywords.isAndStep(step)) {
                 if (previousNonAndStep == null) {
                     // cannot handle AND step with no previous step
                     matchesType = false;
                 } else {
                     // previous step type should match candidate step type
-                    matchesType = keywords.startingWordFor(stepType).equals(findStartingWord(previousNonAndStep));
+                    matchesType = stepType == keywords.stepTypeFor(previousNonAndStep);
                 }
             }
             stepMonitor.stepMatchesType(step, previousNonAndStep, matchesType, stepType, method, stepsType);
@@ -157,55 +178,55 @@ public class StepCandidate {
 
     public void addComposedSteps(List<Step> steps, String stepAsString, Map<String, String> namedParameters,
             List<StepCandidate> allCandidates) {
-        addComposedStepsRecursively(steps, stepAsString, namedParameters, allCandidates, composedSteps);
-    }
-
-    private void addComposedStepsRecursively(List<Step> steps, String stepAsString,
-            Map<String, String> namedParameters, List<StepCandidate> allCandidates, String[] composedSteps) {
-        Map<String, String> matchedParameters = stepCreator.matchedParameters(method, stepAsString,
-                stripStartingWord(stepAsString), namedParameters);
+        Map<String, String> matchedParameters = stepCreator.matchedParameters(method,
+                keywords.stepWithoutStartingWord(stepAsString), namedParameters);
         matchedParameters.putAll(namedParameters);
+        String previousNonAndStep = null;
         for (String composedStep : composedSteps) {
-            addComposedStep(steps, composedStep, matchedParameters, allCandidates);
+            addComposedStep(steps, composedStep, previousNonAndStep, matchedParameters, allCandidates);
+            if (!(keywords.isAndStep(stepAsString) || keywords.isIgnorableStep(stepAsString))) {
+                // only update previous step if not AND or IGNORABLE step
+                previousNonAndStep = stepAsString;
+            }
         }
     }
 
-    private void addComposedStep(List<Step> steps, String composedStep, Map<String, String> matchedParameters,
-            List<StepCandidate> allCandidates) {
-        StepCandidate candidate = findComposedCandidate(composedStep, allCandidates);
+    private void addComposedStep(List<Step> steps, String composedStep, String previousNonAndStep,
+            Map<String, String> matchedParameters, List<StepCandidate> allCandidates) {
+        StepCandidate candidate = findComposedCandidate(composedStep, previousNonAndStep, allCandidates);
         if (candidate != null) {
             steps.add(candidate.createMatchedStep(composedStep, matchedParameters));
             if (candidate.isComposite()) {
                 // candidate is itself composite: recursively add composed steps
-                addComposedStepsRecursively(steps, composedStep, matchedParameters, allCandidates,
-                        candidate.composedSteps());
+                candidate.addComposedSteps(steps, composedStep, matchedParameters, allCandidates);
             }
         } else {
-            steps.add(StepCreator.createPendingStep(composedStep, null));
+            steps.add(StepCreator.createPendingStep(composedStep, previousNonAndStep));
         }
     }
 
-    private StepCandidate findComposedCandidate(String composedStep, List<StepCandidate> allCandidates) {
+    private StepCandidate findComposedCandidate(String composedStep, String previousNonAndStep,
+            List<StepCandidate> allCandidates) {
+        StepType stepType;
+        if (keywords.isAndStep(composedStep)) {
+            if (previousNonAndStep != null) {
+                stepType = keywords.stepTypeFor(previousNonAndStep);
+            }
+            else {
+                // cannot handle AND step with no previous step
+                return null;
+            }
+        }
+        else {
+            stepType = keywords.stepTypeFor(composedStep);
+        }
         for (StepCandidate candidate : allCandidates) {
-            if (StringUtils.startsWith(composedStep, candidate.getStartingWord())
-                    && (StringUtils.endsWith(composedStep, candidate.getPatternAsString()) || candidate
-                            .matches(composedStep))) {
+            if (stepType == candidate.getStepType() && (StringUtils.endsWith(composedStep,
+                    candidate.getPatternAsString()) || candidate.matches(composedStep, previousNonAndStep))) {
                 return candidate;
             }
         }
         return null;
-    }
-
-    public boolean isAndStep(String stepAsString) {
-        return keywords.isAndStep(stepAsString);
-    }
-
-    public boolean isIgnorableStep(String stepAsString) {
-        return keywords.isIgnorableStep(stepAsString);
-    }
-
-    private String findStartingWord(String stepAsString) {
-        return keywords.startingWord(stepAsString, stepType);
     }
 
     private String stripStartingWord(String stepAsString) {

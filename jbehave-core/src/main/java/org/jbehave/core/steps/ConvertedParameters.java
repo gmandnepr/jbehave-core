@@ -1,5 +1,6 @@
 package org.jbehave.core.steps;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -33,19 +34,22 @@ public class ConvertedParameters implements Parameters {
         this.parameterConverters = parameterConverters;
     }
 
-    public <T> T valueAs(String name, Class<T> type) {
+    @Override
+    public <T> T valueAs(String name, Type type) {
         return convert(valueFor(name), type);
     }
 
-    public <T> T valueAs(String name, Class<T> type, T defaultValue) {
+    @Override
+    public <T> T valueAs(String name, Type type, T defaultValue) {
         if (values.containsKey(name)) {
             return valueAs(name, type);
         }
         return defaultValue;
     }
 
-    private <T> T convert(String value, Class<T> type) {
-        return type.cast(parameterConverters.convert(value, type));
+    @SuppressWarnings("unchecked")
+    private <T> T convert(String value, Type type) {
+        return (T) parameterConverters.convert(value, type);
     }
 
     private String valueFor(String name) {
@@ -55,17 +59,18 @@ public class ConvertedParameters implements Parameters {
         return values.get(name);
     }
 
+    @Override
     public Map<String, String> values() {
         return values;
     }
-    
+
     @SuppressWarnings("serial")
     public static class ValueNotFound extends RuntimeException {
 
         public ValueNotFound(String name) {
             super(name);
         }
-        
+
     }
 
 }

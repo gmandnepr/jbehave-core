@@ -19,7 +19,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -41,7 +40,7 @@ public class SpringStepsFactoryBehaviour {
 	}
 
 	@Test
-	public void annotationStepsCanBeCreated() throws Exception {
+	public void annotationStepsCanBeCreated() {
 		// Given
 		ApplicationContext context = createApplicationContext(StepsAnnotationConfiguration.class
 				.getName());
@@ -63,10 +62,8 @@ public class SpringStepsFactoryBehaviour {
 		List<CandidateSteps> steps = factory.createCandidateSteps();
 		// Then
 		assertFooStepsFound(steps);
-		assertEquals(
-				42,
-				(int) findInstanceOfType(steps, FooStepsWithDependency.class).integer);
-	}
+        assertThat(findInstanceOfType(steps, FooStepsWithDependency.class).integer, equalTo(42));
+    }
 
 	@Test
 	public void annotationStepsWithDependenciesCanBeCreated() {
@@ -79,14 +76,12 @@ public class SpringStepsFactoryBehaviour {
 		List<CandidateSteps> steps = factory.createCandidateSteps();
 		// Then
 		assertFooStepsFound(steps);
-		assertEquals(
-				42,
-				(int) findInstanceOfType(steps, FooStepsWithDependency.class).integer);
-	}
+        assertThat(findInstanceOfType(steps, FooStepsWithDependency.class).integer, equalTo(42));
+    }
 
 	private void assertFooStepsFound(List<CandidateSteps> steps) {
-		assertEquals(1, steps.size());
-		assertThat(firstStepsInstance(steps), instanceOf(FooSteps.class));
+        assertThat(steps.size(), equalTo(1));
+        assertThat(firstStepsInstance(steps), instanceOf(FooSteps.class));
 	}
 
 	private Object firstStepsInstance(List<CandidateSteps> steps) {
@@ -126,8 +121,8 @@ public class SpringStepsFactoryBehaviour {
 				new String[] { "fooSteps", "undefined", "blowUp" });
 		doAnswer(new Answer<Class<FooSteps>>() {
 
-			public Class<FooSteps> answer(InvocationOnMock invocation)
-					throws Throwable {
+			@Override
+			public Class<FooSteps> answer(InvocationOnMock invocation) {
 
 				return FooSteps.class;
 			}
@@ -135,8 +130,8 @@ public class SpringStepsFactoryBehaviour {
 		when(context.getType("undefined")).thenReturn(null);
 		doAnswer(new Answer<Class<BlowUp>>() {
 
-			public Class<BlowUp> answer(InvocationOnMock invocation)
-					throws Throwable {
+			@Override
+			public Class<BlowUp> answer(InvocationOnMock invocation) {
 
 				return BlowUp.class;
 			}

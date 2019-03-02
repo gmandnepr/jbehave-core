@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public class BytecodeGroovyClassLoader extends GroovyClassLoader {
 
-    private Map<String, byte[]> classBytes = new HashMap<String, byte[]>();
+    private Map<String, byte[]> classBytes = new HashMap<>();
 
     @Override
     public InputStream getResourceAsStream(String name) {
@@ -41,6 +41,7 @@ public class BytecodeGroovyClassLoader extends GroovyClassLoader {
         // These six lines copied from Groovy itself, with the intention to
         // return a subclass
         InnerLoader loader = AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
+            @Override
             public InnerLoader run() {
                 return new InnerLoader(BytecodeGroovyClassLoader.this);
             }

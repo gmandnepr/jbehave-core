@@ -1,9 +1,9 @@
 package org.jbehave.core.steps.spring;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,8 +43,8 @@ public class SpringStepsFactoryAOPBehaviour {
 
 	private void assertAOPFooStepsFound(List<CandidateSteps> steps) {
 		// // Only one returned, the IFooSteps will not be detected
-		assertEquals(1, steps.size());
-		assertThat(steps, hasItem(isCandidateStepInstanceOf(FooSteps.class)));
+        assertThat(steps.size(), equalTo(1));
+        assertThat(steps, hasItem(isCandidateStepInstanceOf(FooSteps.class)));
 		// Make it explicit that the steps bean with the annotation in the
 		// interface is not provided
 		assertThat(steps,
@@ -104,7 +104,8 @@ public class SpringStepsFactoryAOPBehaviour {
 
 	public static class FooStepsImpl implements IFooSteps {
 
-		public void aStepWithAParam(String param) {
+		@Override
+        public void aStepWithAParam(String param) {
 
 		}
 
@@ -124,16 +125,17 @@ public class SpringStepsFactoryAOPBehaviour {
 			this.target = target;
 		}
 
-		public boolean matches(Object item) {
+		@Override
+        public boolean matches(Object item) {
 			if (item instanceof CandidateSteps) {
 				Object instance = ((Steps) item).instance();
-				boolean result = target.isAssignableFrom(instance.getClass());
-				return result;
+                return target.isAssignableFrom(instance.getClass());
 			}
 			return false;
 		}
 
-		public void describeTo(Description description) {
+		@Override
+        public void describeTo(Description description) {
 			description
 					.appendText("Step class instantiated from this CandidateStep is of type "
 							+ target.getName());

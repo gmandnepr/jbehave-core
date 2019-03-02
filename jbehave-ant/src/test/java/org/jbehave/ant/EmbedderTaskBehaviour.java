@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tools.ant.Project;
 import org.jbehave.core.InjectableEmbedder;
 import org.jbehave.core.embedder.Embedder;
@@ -253,7 +253,8 @@ public class EmbedderTaskBehaviour {
             useEmbedder(new MyEmbedder());
         }
 
-        public void run() throws Throwable {
+        @Override
+        public void run() {
         }
 
     }
@@ -469,6 +470,7 @@ public class EmbedderTaskBehaviour {
 
     public static class MyExecutors implements ExecutorServiceFactory {
 
+        @Override
         public ExecutorService create(EmbedderControls controls) {
             return EXECUTOR_SERVICE;
         }

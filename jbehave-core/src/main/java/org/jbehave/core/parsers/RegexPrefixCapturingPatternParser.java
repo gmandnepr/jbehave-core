@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.steps.StepType;
 
 /**
@@ -75,7 +75,8 @@ public class RegexPrefixCapturingPatternParser implements StepPatternParser {
 		return prefix;
 	}
 
-	public StepMatcher parseStep(StepType stepType, String stepPattern) {
+	@Override
+    public StepMatcher parseStep(StepType stepType, String stepPattern) {
 		String escapingPunctuation = escapingPunctuation(stepPattern);
 		List<Parameter> parameters = findParameters(escapingPunctuation);
 		Pattern regexPattern = buildPattern(escapingPunctuation, parameters);
@@ -90,7 +91,7 @@ public class RegexPrefixCapturingPatternParser implements StepPatternParser {
 	}
 
 	private String[] parameterNames(List<Parameter> parameters) {
-		List<String> names = new ArrayList<String>();
+		List<String> names = new ArrayList<>();
 		for (Parameter parameter : parameters) {
 			names.add(parameter.name);
 		}
@@ -98,7 +99,7 @@ public class RegexPrefixCapturingPatternParser implements StepPatternParser {
 	}
 
 	private List<Parameter> findParameters(String pattern) {
-		List<Parameter> parameters = new ArrayList<Parameter>();
+		List<Parameter> parameters = new ArrayList<>();
 		Matcher findingAllParameterNames = findingAllParameterNames().matcher(
 				pattern);
 		while (findingAllParameterNames.find()) {

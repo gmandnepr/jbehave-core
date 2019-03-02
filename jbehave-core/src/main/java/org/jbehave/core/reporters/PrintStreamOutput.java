@@ -12,12 +12,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Transformer;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import org.jbehave.core.annotations.AfterScenario;
+import org.jbehave.core.annotations.Scope;
 import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.embedder.MetaFilter;
 import org.jbehave.core.failures.KnownFailure;
@@ -34,9 +36,7 @@ import org.jbehave.core.model.Scenario;
 import org.jbehave.core.model.Story;
 import org.jbehave.core.model.StoryDuration;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
-import static org.apache.commons.lang.StringEscapeUtils.escapeXml;
-import static org.apache.commons.lang.StringUtils.substringBetween;
+import static org.apache.commons.lang3.StringUtils.substringBetween;
 import static org.jbehave.core.steps.StepCreator.PARAMETER_TABLE_END;
 import static org.jbehave.core.steps.StepCreator.PARAMETER_TABLE_START;
 import static org.jbehave.core.steps.StepCreator.PARAMETER_VALUE_END;
@@ -52,7 +52,7 @@ import static org.jbehave.core.steps.StepCreator.PARAMETER_VALUE_START;
  * <ul>
  * <li>custom output patterns, providing only the patterns that differ from
  * default</li>
- * <li>keywords localised for different languages, providing the i18n Locale</li>
+ * <li>keywords localised for different languages, providing the formatOutcome Locale</li>
  * <li>flag to report failure trace</li>
  * </ul>
  * </p>
@@ -86,21 +86,61 @@ import static org.jbehave.core.steps.StepCreator.PARAMETER_VALUE_START;
  * 
  * </p>
  */
-public abstract class PrintStreamOutput implements StoryReporter {
+public abstract class PrintStreamOutput extends NullStoryReporter {
 
     private static final String EMPTY = "";
+    public static final String NL = "\n";
 
     public enum Format {
-        TXT, HTML, XML
+        TXT {
+            @Override
+            public Object escapeValue(Object object) {
+                return object;
+            }
+        },
+        HTML {
+            @Override
+            public Object escapeValue(Object object) {
+                return EscapeMode.HTML.escapeString(asString(object));
+            }
+        },
+        XML {
+            @Override
+            public Object escapeValue(Object object) { return EscapeMode.XML.escapeString(asString(object)); }
+        },
+        JSON {
+            @Override
+            public Object escapeValue(Object object) {
+                return EscapeMode.JSON.escapeString(asString(object));
+            }
+        };
+
+        public abstract Object escapeValue(Object object);
+
+        private static String asString(Object object) {
+            return object != null ? object.toString() : EMPTY;
+        }
     }
 
     private final Format format;
     private final PrintStream output;
     private final Properties outputPatterns;
     private final Keywords keywords;
-    private ThreadLocal<Boolean> reportFailureTrace = new ThreadLocal<Boolean>();
-    private ThreadLocal<Boolean> compressFailureTrace = new ThreadLocal<Boolean>();
-    private ThreadLocal<Throwable> cause = new ThreadLocal<Throwable>();
+    private ThreadLocal<Boolean> reportFailureTrace = new ThreadLocal<>();
+    private ThreadLocal<Boolean> compressFailureTrace = new ThreadLocal<>();
+    private ThreadLocal<Throwable> cause = new ThreadLocal<>();
+
+    protected PrintStreamOutput(Format format, PrintStream output, Properties defaultPatterns,
+            Properties outputPatterns, Keywords keywords) {
+        this(format, output, mergePatterns(defaultPatterns, outputPatterns), keywords, false,
+                false);
+    }
+
+    protected PrintStreamOutput(Format format, PrintStream output, Properties defaultPatterns,
+            Properties outputPatterns, Keywords keywords, boolean reportFailureTrace, boolean compressFailureTrace) {
+        this(format, output, mergePatterns(defaultPatterns, outputPatterns), keywords, reportFailureTrace,
+                compressFailureTrace);
+    }
 
     protected PrintStreamOutput(Format format, PrintStream output, Properties outputPatterns, Keywords keywords,
             boolean reportFailureTrace, boolean compressFailureTrace) {
@@ -112,25 +152,44 @@ public abstract class PrintStreamOutput implements StoryReporter {
         doCompressFailureTrace(compressFailureTrace);
     }
 
+    private static Properties mergePatterns(Properties defaultPatterns, Properties outputPatterns) {
+        Properties patterns = new Properties();
+        patterns.putAll(defaultPatterns);
+        // override any default pattern
+        patterns.putAll(outputPatterns);
+        return patterns;
+    }
+
+    @Override
     public void beforeStep(String step) {
     }
 
+    @Override
     public void successful(String step) {
         print(format("successful", "{0}\n", step));
     }
 
+    @Override
     public void ignorable(String step) {
         print(format("ignorable", "{0}\n", step));
     }
 
+    @Override
+    public void comment(String step) {
+        print(format("comment", "{0}\n", step));
+    }
+
+    @Override
     public void pending(String step) {
         print(format("pending", "{0} ({1})\n", step, keywords.pending()));
     }
 
+    @Override
     public void notPerformed(String step) {
         print(format("notPerformed", "{0} ({1})\n", step, keywords.notPerformed()));
     }
 
+    @Override
     public void failed(String step, Throwable storyFailure) {
         // storyFailure be used if a subclass has rewritten the "failed" pattern
         // to have a {3} as WebDriverHtmlOutput (jbehave-web) does.
@@ -143,19 +202,20 @@ public abstract class PrintStreamOutput implements StoryReporter {
         }
     }
 
+    @Override
     public void failedOutcomes(String step, OutcomesTable table) {
         failed(step, table.failureCause());
         print(table);
     }
 
     private void print(OutcomesTable table) {
-        print(format("outcomesTableStart", "\n"));
+        print(format("outcomesTableStart", NL));
         List<Outcome<?>> rows = table.getOutcomes();
         print(format("outcomesTableHeadStart", "|"));
         for (String field : table.getOutcomeFields()) {
             print(format("outcomesTableHeadCell", "{0}|", field));
         }
-        print(format("outcomesTableHeadEnd", "\n"));
+        print(format("outcomesTableHeadEnd", NL));
         print(format("outcomesTableBodyStart", EMPTY));
         for (Outcome<?> outcome : rows) {
             print(format("outcomesTableRowStart", "|", outcome.isVerified() ? "verified" : "notVerified"));
@@ -163,10 +223,10 @@ public abstract class PrintStreamOutput implements StoryReporter {
             print(format("outcomesTableCell", "{0}|", renderOutcomeValue(outcome.getValue(), table.getDateFormat())));
             print(format("outcomesTableCell", "{0}|", outcome.getMatcher()));
             print(format("outcomesTableCell", "{0}|", (outcome.isVerified() ? keywords.yes() : keywords.no())));
-            print(format("outcomesTableRowEnd", "\n"));
+            print(format("outcomesTableRowEnd", NL));
         }
-        print(format("outcomesTableBodyEnd", "\n"));
-        print(format("outcomesTableEnd", "\n"));
+        print(format("outcomesTableBodyEnd", NL));
+        print(format("outcomesTableEnd", NL));
     }
 
     private Object renderOutcomeValue(Object value, String dateFormat) {
@@ -177,23 +237,24 @@ public abstract class PrintStreamOutput implements StoryReporter {
         }
     }
 
+    @Override
     public void storyNotAllowed(Story story, String filter) {
         print(format("filter", "{0}\n", filter));
     }
 
+    @Override
     public void storyCancelled(Story story, StoryDuration storyDuration) {
         print(format("storyCancelled", "{0}: {1} ({2} s)\n", keywords.storyCancelled(), keywords.duration(),
                 storyDuration.getDurationInSecs()));
     }
 
+    @Override
     public void beforeStory(Story story, boolean givenStory) {
         print(format("beforeStory", "{0}\n({1})\n", story.getDescription().asString(), story.getPath()));
-        if (!story.getMeta().isEmpty()) {
-            Meta meta = story.getMeta();
-            print(meta);
-        }
+        print(story.getMeta());
     }
 
+    @Override
     public void narrative(Narrative narrative) {
         if (!narrative.isEmpty()) {
             if (!narrative.isAlternative()) {
@@ -207,56 +268,89 @@ public abstract class PrintStreamOutput implements StoryReporter {
         }
     }
 
+    @Override
     public void lifecyle(Lifecycle lifecycle) {
         if (!lifecycle.isEmpty()) {
             print(format("lifecycleStart", "{0}\n", keywords.lifecycle()));
-            if (!lifecycle.getBeforeSteps().isEmpty()) {
+            if (lifecycle.hasBeforeSteps()) {
                 print(format("lifecycleBeforeStart", "{0}\n", keywords.before()));
-                print(lifecycle.getBeforeSteps());
-                print(format("lifecycleBeforeEnd", ""));
-            }
-            if (!lifecycle.getAfterSteps().isEmpty()) {
-                print(format("lifecycleAfterStart", "{0}\n", keywords.after()));
-                for ( org.jbehave.core.annotations.AfterScenario.Outcome outcome : lifecycle.getOutcomes() ){
-                	print(format("lifecycleOutcome", "{0} {1}\n", keywords.outcome(), i18n(outcome)));
-                	MetaFilter metaFilter = lifecycle.getMetaFilter(outcome);
-                	if ( !metaFilter.isEmpty() ){
-                		print(format("lifecycleMetaFilter", "{0} {1}\n", keywords.metaFilter(), metaFilter.asString()));
-                	}
-                	print(lifecycle.getAfterSteps(outcome));
+                for (Scope scope : lifecycle.getScopes() ){
+                    printWithScope(lifecycle.getBeforeSteps(scope), scope);
                 }
-                print(format("lifecycleAfterEnd", ""));
+                print(format("lifecycleBeforeEnd", NL));
             }
-            print(format("lifecycleEnd", "\n"));
+            if (lifecycle.hasAfterSteps()) {
+                print(format("lifecycleAfterStart", "{0}\n", keywords.after()));
+                for (Scope scope : lifecycle.getScopes() ){
+                    printOutcomes(lifecycle, scope);
+                }
+                print(format("lifecycleAfterEnd", NL));
+            }
+            print(format("lifecycleEnd", NL));
         }
     }
 
-    private String i18n(
-			org.jbehave.core.annotations.AfterScenario.Outcome outcome) {
-    	switch ( outcome ){
-    	case ANY: return keywords.outcomeAny();
-    	case SUCCESS: return keywords.outcomeSuccess();
-    	case FAILURE: return keywords.outcomeFailure();
-    	default: return outcome.name();
-    	}
-	}
+    private void printOutcomes(Lifecycle lifecycle, Scope scope) {
+        for ( AfterScenario.Outcome outcome : lifecycle.getOutcomes() ){
+            List<String> afterSteps = lifecycle.getAfterSteps(scope, outcome);
+            if ( !afterSteps.isEmpty() ) {
+                print(format("lifecycleScopeStart", "{0} {1}\n", keywords.scope(), formatScope(scope)));
+                print(format("lifecycleOutcomeStart", "{0} {1}\n", keywords.outcome(), formatOutcome(outcome)));
+                MetaFilter metaFilter = lifecycle.getMetaFilter(outcome);
+                if (!metaFilter.isEmpty()) {
+                    print(format("lifecycleMetaFilter", "{0} {1}\n", keywords.metaFilter(), metaFilter.asString()));
+                }
+                print(afterSteps);
+                print(format("lifecycleOutcomeEnd", "\n"));
+                print(format("lifecycleScopeEnd", "\n"));
+            }
+        }
+    }
 
-	private void print(List<String> steps) {
+    private void printWithScope(List<String> steps, Scope scope) {
+        if ( !steps.isEmpty()) {
+            print(format("lifecycleScopeStart", "{0} {1}\n", keywords.scope(), formatScope(scope)));
+            print(steps);
+            print(format("lifecycleScopeEnd", "\n"));
+        }
+    }
+
+    private String formatScope(Scope scope) {
+        switch ( scope ){
+            case SCENARIO: return keywords.scopeScenario();
+            case STORY: return keywords.scopeStory();
+            default: return scope.name();
+        }
+    }
+
+    private String formatOutcome(AfterScenario.Outcome outcome) {
+        switch ( outcome ){
+        case ANY: return keywords.outcomeAny();
+        case SUCCESS: return keywords.outcomeSuccess();
+        case FAILURE: return keywords.outcomeFailure();
+        default: return outcome.name();
+        }
+    }
+
+    private void print(List<String> steps) {
         for (String step : steps) {
             print(format("lifecycleStep", "{0}\n", step));
         }
     }
 
     private void print(Meta meta) {
-        print(format("metaStart", "{0}\n", keywords.meta()));
-        for (String name : meta.getPropertyNames()) {
-            print(format("metaProperty", "{0}{1} {2}", keywords.metaProperty(), name, meta.getProperty(name)));
+        if (!meta.isEmpty()) {
+            print(format("metaStart", "{0}\n", keywords.meta()));
+            for (String name : meta.getPropertyNames()) {
+                print(format("metaProperty", "{0}{1} {2}", keywords.metaProperty(), name, meta.getProperty(name)));
+            }
+            print(format("metaEnd", NL));
         }
-        print(format("metaEnd", "\n"));
     }
 
+    @Override
     public void afterStory(boolean givenOrRestartingStory) {
-        print(format("afterStory", "\n"));
+        print(format("afterStory", NL));
         // take care not to close System.out
         // which is used for ConsoleOutput
         if (!givenOrRestartingStory && output != System.out) {
@@ -264,73 +358,94 @@ public abstract class PrintStreamOutput implements StoryReporter {
         }
     }
 
+    @Override
+    public void beforeGivenStories() {
+        print(format("beforeGivenStories", ""));
+    }
+
+    @Override
     public void givenStories(GivenStories givenStories) {
         print(format("givenStoriesStart", "{0}\n", keywords.givenStories()));
         for (GivenStory givenStory : givenStories.getStories()) {
-            print(format("givenStory", "{0} {1}\n", givenStory.asString(),
+            print(format("givenStory", "{0}{1}\n", givenStory.asString(),
                     (givenStory.hasAnchor() ? givenStory.getParameters() : "")));
         }
-        print(format("givenStoriesEnd", "\n"));
+        print(format("givenStoriesEnd", NL));
     }
 
+    @Override
     public void givenStories(List<String> storyPaths) {
         givenStories(new GivenStories(StringUtils.join(storyPaths, ",")));
     }
 
+    @Override
+    public void afterGivenStories() {
+        print(format("afterGivenStories", ""));
+    }
+
+    @Override
     public void scenarioNotAllowed(Scenario scenario, String filter) {
         print(format("filter", "{0}\n", filter));
     }
 
-    public void beforeScenario(String title) {
+    @Override
+    public void beforeScenario(Scenario scenario) {
         cause.set(null);
-        print(format("beforeScenario", "{0} {1}\n", keywords.scenario(), title));
+        print(format("beforeScenario", "{0} {1}\n", keywords.scenario(), scenario.getTitle()));
+        print(scenario.getMeta());
     }
 
-    public void scenarioMeta(Meta meta) {
-        if (!meta.isEmpty()) {
-            print(meta);
-        }
-    }
-
+    @Override
     public void afterScenario() {
         if (cause.get() != null && !(cause.get() instanceof KnownFailure) && reportFailureTrace() ) {
             print(format("afterScenarioWithFailure", "\n{0}\n",
                     new StackTraceFormatter(compressFailureTrace()).stackTrace(cause.get())));
         } else {
-            print(format("afterScenario", "\n"));
+            print(format("afterScenario", NL));
         }
     }
 
+    @Override
     public void beforeExamples(List<String> steps, ExamplesTable table) {
         print(format("beforeExamples", "{0}\n", keywords.examplesTable()));
+        print(format("examplesStepsStart", EMPTY));
         for (String step : steps) {
             print(format("examplesStep", "{0}\n", step));
         }
+        print(format("examplesStepsEnd", EMPTY));
         print(formatTable(table));
     }
 
-    public void example(Map<String, String> tableRow) {
+    @Override
+    public void example(Map<String, String> tableRow, int exampleIndex) {
         print(format("example", "\n{0} {1}\n", keywords.examplesTableRow(), tableRow));
     }
 
+    @Override
     public void afterExamples() {
-        print(format("afterExamples", "\n"));
+        print(format("afterExamples", NL));
     }
 
+    @Override
     public void dryRun() {
         print(format("dryRun", "{0}\n", keywords.dryRun()));
     }
 
+    @Override
     public void pendingMethods(List<String> methods) {
+        print(format("pendingMethodsStart", EMPTY));
         for (String method : methods) {
             print(format("pendingMethod", "{0}\n", method));
         }
+        print(format("pendingMethodsEnd", EMPTY));
     }
 
+    @Override
     public void restarted(String step, Throwable cause) {
         print(format("restarted", "{0} {1}\n", step, cause.getMessage()));
     }
     
+    @Override
     public void restartedStory(Story story, Throwable cause) {
         print(format("restartedStory", "{0} {1}\n", story.getPath(), cause.getMessage()));
     }
@@ -354,24 +469,24 @@ public abstract class PrintStreamOutput implements StoryReporter {
     protected String formatTable(ExamplesTable table) {
         OutputStream formatted = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(formatted);
-        out.print(format("examplesTableStart", "\n"));
+        print(out, format("examplesTableStart", NL));
         List<Map<String, String>> rows = table.getRows();
         List<String> headers = table.getHeaders();
-        out.print(format("examplesTableHeadStart", "|"));
+        print(out, format("examplesTableHeadStart", "|"));
         for (String header : headers) {
-            out.print(format("examplesTableHeadCell", "{0}|", header));
+            print(out, format("examplesTableHeadCell", "{0}|", header));
         }
-        out.print(format("examplesTableHeadEnd", "\n"));
-        out.print(format("examplesTableBodyStart", EMPTY));
+        print(out, format("examplesTableHeadEnd", NL));
+        print(out, format("examplesTableBodyStart", EMPTY));
         for (Map<String, String> row : rows) {
-            out.print(format("examplesTableRowStart", "|"));
+            print(out, format("examplesTableRowStart", "|"));
             for (String header : headers) {
-                out.print(format("examplesTableCell", "{0}|", row.get(header)));
+                print(out, format("examplesTableCell", "{0}|", row.get(header)));
             }
-            out.print(format("examplesTableRowEnd", "\n"));
+            print(out, format("examplesTableRowEnd", NL));
         }
-        out.print(format("examplesTableBodyEnd", ""));
-        out.print(format("examplesTableEnd", ""));
+        print(out, format("examplesTableBodyEnd", EMPTY));
+        print(out, format("examplesTableEnd", EMPTY));
         return formatted.toString();
     }
 
@@ -385,30 +500,20 @@ public abstract class PrintStreamOutput implements StoryReporter {
 
     /**
      * Escapes args' string values according to format
-     * 
+     *
      * @param format the Format used by the PrintStream
      * @param args the array of args to escape
      * @return The cloned and escaped array of args
      */
     protected Object[] escape(final Format format, Object... args) {
-        // Transformer that escapes HTML and XML strings
-        Transformer escapingTransformer = new Transformer() {
+        // Transformer that escapes HTML,XML,JSON strings
+        Transformer<Object, Object> escapingTransformer = new Transformer<Object, Object>() {
+            @Override
             public Object transform(Object object) {
-                switch (format) {
-                case HTML:
-                    return escapeHtml(asString(object));
-                case XML:
-                    return escapeXml(asString(object));
-                default:
-                    return object;
-                }
-            }
-
-            private String asString(Object object) {
-                return (object != null ? object.toString() : EMPTY);
+                return format.escapeValue(object);
             }
         };
-        List<?> list = Arrays.asList(ArrayUtils.clone(args));
+        List<Object> list = Arrays.asList(ArrayUtils.clone(args));
         CollectionUtils.transform(list, escapingTransformer);
         return list.toArray();
     }
@@ -465,36 +570,30 @@ public abstract class PrintStreamOutput implements StoryReporter {
      * @param text the String to print
      */
     protected void print(String text) {
-        if (containsTable(text)) {
-            String tableStart = format(PARAMETER_TABLE_START, PARAMETER_TABLE_START);
-            String tableEnd = format(PARAMETER_TABLE_END, PARAMETER_TABLE_END);
-            String tableAsString = substringBetween(text, tableStart, tableEnd);
-            output.print(text
-                    .replace(tableAsString, formatTable(new ExamplesTable(tableAsString)))
-                    .replace(tableStart, format("parameterValueStart", EMPTY))
-                    .replace(tableEnd, format("parameterValueEnd", EMPTY))
-                    .replace(format(PARAMETER_VALUE_START, PARAMETER_VALUE_START), format("parameterValueStart", EMPTY))
-                    .replace(format(PARAMETER_VALUE_END, PARAMETER_VALUE_END), format("parameterValueEnd", EMPTY))
-                    .replace(format(PARAMETER_VALUE_NEWLINE, PARAMETER_VALUE_NEWLINE),
-                            format("parameterValueNewline", "\n")));
-        } else {
-            output.print(text
-                    .replace(format(PARAMETER_VALUE_START, PARAMETER_VALUE_START), format("parameterValueStart", EMPTY))
-                    .replace(format(PARAMETER_VALUE_END, PARAMETER_VALUE_END), format("parameterValueEnd", EMPTY))
-                    .replace(format(PARAMETER_VALUE_NEWLINE, PARAMETER_VALUE_NEWLINE),
-                            format("parameterValueNewline", "\n")));
-        }
-    }
-
-    private boolean containsTable(String text) {
         String tableStart = format(PARAMETER_TABLE_START, PARAMETER_TABLE_START);
         String tableEnd = format(PARAMETER_TABLE_END, PARAMETER_TABLE_END);
-        return text.contains(tableStart) && text.contains(tableEnd);
+        boolean containsTable = text.contains(tableStart) && text.contains(tableEnd);
+        String textToPrint = containsTable ? transformPrintingTable(text, tableStart, tableEnd) : text;
+        print(output, textToPrint
+                .replace(format(PARAMETER_VALUE_START, PARAMETER_VALUE_START), format("parameterValueStart", EMPTY))
+                .replace(format(PARAMETER_VALUE_END, PARAMETER_VALUE_END), format("parameterValueEnd", EMPTY))
+                .replace(format(PARAMETER_VALUE_NEWLINE, PARAMETER_VALUE_NEWLINE), format("parameterValueNewline", NL)));
+    }
+
+    protected String transformPrintingTable(String text, String tableStart, String tableEnd) {
+        String tableAsString = substringBetween(text, tableStart, tableEnd);
+        return text
+                .replace(tableAsString, formatTable(new ExamplesTable(tableAsString)))
+                .replace(tableStart, format("parameterValueStart", EMPTY))
+                .replace(tableEnd, format("parameterValueEnd", EMPTY));
+    }
+
+    protected void print(PrintStream output, String text) {
+        output.print(text);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).append(format).append(output).toString();
     }
-
 }

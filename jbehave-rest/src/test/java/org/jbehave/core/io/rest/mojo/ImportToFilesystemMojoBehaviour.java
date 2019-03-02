@@ -2,11 +2,11 @@ package org.jbehave.core.io.rest.mojo;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.jbehave.core.io.ResourceLoader;
 import org.jbehave.core.io.rest.Resource;
 import org.jbehave.core.io.rest.ResourceIndexer;
@@ -24,13 +24,13 @@ import static org.mockito.Mockito.when;
 public class ImportToFilesystemMojoBehaviour {
 
     @Test
-    public void canImportToFilesystem() throws IOException, MojoExecutionException, MojoFailureException {
+    public void canImportToFilesystem() throws IOException, MojoExecutionException {
 
         // Given
         final ResourceIndexer indexer = mock(ResourceIndexer.class);
         final ResourceLoader loader = mock(ResourceLoader.class);
         String rootURI = "http://wiki";
-        Map<String, Resource> index = new HashMap<String, Resource>();
+        Map<String, Resource> index = new HashMap<>();
         index.put("one", new Resource(rootURI + "/one"));
         index.put("two", new Resource(rootURI + "/two"));
         when(indexer.indexResources(rootURI)).thenReturn(index);
@@ -65,10 +65,10 @@ public class ImportToFilesystemMojoBehaviour {
         // Then
         File file1 = new File(targetPath + "/one" + targetExt);
         assertThat(file1.exists(), equalTo(true));
-        assertThat(readFileToString(file1), equalTo(text1));
+        assertThat(readFileToString(file1, StandardCharsets.UTF_8), equalTo(text1));
         File file2 = new File(targetPath + "/two" + targetExt);
         assertThat(file2.exists(), equalTo(true));
-        assertThat(readFileToString(file2), equalTo(text2));
+        assertThat(readFileToString(file2, StandardCharsets.UTF_8), equalTo(text2));
 
     }
 

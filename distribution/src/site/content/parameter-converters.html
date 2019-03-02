@@ -33,7 +33,7 @@ matching the textual step to the annotation pattern are: "STK1" and
 </pre>
 <p>these would handled automatically as well, provided the type of
 the parameter was a <a
-    href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/List.html">List</a></p>
+    href="https://docs.oracle.com/javase/7/docs/api/java/util/List.html">List</a></p>
 <script type="syntaxhighlighter" class="brush: java">
 <![CDATA[
     @Given("a stock of symbols $symbols and thresholds $thresholds")
@@ -66,7 +66,7 @@ implementations of this interface. Specifically:</p>
     <li><a
         href="javadoc/core/org/jbehave/core/steps/ParameterConverters.NumberConverter.html">NumberConverter</a></li>
     <li><a
-        href="javadoc/core/org/jbehave/core/steps/ParameterConverters.NumberListConverter.html">NumberListConverter</a></li>
+        href="javadoc/core/org/jbehave/core/steps/ParameterConverters.StringConverter.html">StringConverter</a></li>
     <li><a
         href="javadoc/core/org/jbehave/core/steps/ParameterConverters.StringListConverter.html">StringListConverter</a></li>
     <li><a
@@ -74,12 +74,50 @@ implementations of this interface. Specifically:</p>
     <li><a
         href="javadoc/core/org/jbehave/core/steps/ParameterConverters.EnumConverter.html">EnumConverter</a></li>
     <li><a
-        href="javadoc/core/org/jbehave/core/steps/ParameterConverters.EnumListConverter.html">EnumListConverter</a></li>
-    <li><a
         href="javadoc/core/org/jbehave/core/steps/ParameterConverters.ExamplesTableConverter.html">ExamplesTableConverter</a></li>
     <li><a
+        href="javadoc/core/org/jbehave/core/steps/ParameterConverters.ExamplesTableParametersConverter.html">ExamplesTableParametersConverter</a></li>
+    <li><a
         href="javadoc/core/org/jbehave/core/steps/ParameterConverters.MethodReturningConverter.html">MethodReturningConverter</a></li>
+    <li><a
+        href="javadoc/core/org/jbehave/core/steps/ParameterConverters.JsonConverter.html">JsonConverter</a></li>
 </ul>
+<p>JBehave supports automatic conversion to collections if corresponding element type converter is present. For example,
+ having <a href="javadoc/core/org/jbehave/core/steps/ParameterConverters.NumberConverter.html">NumberConverter</a>
+ conversion to List&lt;Number&gt; is performed automatically without specifying extra converters. By default
+ blank values are converted to empty collections of the corresponding types.</p>
+<p>Collection type mapping is following:
+<table class="bodyTable">
+    <thead>
+    <th>Parameter type</th>
+    <th>Resulting object type</th>
+    </thead>
+    <tbody>
+    <tr class="a">
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/List.html">List</a></td>
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/ArrayList.html">ArrayList</a></td>
+    </tr>
+    <tr class="b">
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/Set.html">Set</a></td>
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/HashSet.html">HashSet</a></td>
+    </tr>
+    <tr class="a">
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/SortedSet.html">SortedSet</a></td>
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/TreeSet.html">TreeSet</a></td>
+    </tr>
+    <tr class="b">
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/NavigableSet.html">NavigableSet</a></td>
+        <td><a href="https://docs.oracle.com/javase/7/docs/api/java/util/TreeSet.html">TreeSet</a></td>
+    </tr>
+    <tr class="a">
+        <td>Any implementation of <a href="https://docs.oracle.com/javase/7/docs/api/java/util/Collection.html">Collection</a>
+            having constructor without arguments</td>
+        <td>Corresponding implementation type</td>
+    </tr>
+    </tbody>
+</table>
+</p>
+
 
 <h3>Customising parameter converters</h3>
 
@@ -110,10 +148,12 @@ instances will take precedence over the default ones:</p>
 
 <h3>Defining parameter converters</h3>
 
-<p>Users can define their own custom parameter converters by
-implementing the <a
+<p>Users can define their own custom parameter converters by implementing the <a
     href="javadoc/core/org/jbehave/core/steps/ParameterConverters.ParameterConverter.html">ParameterConverter</a>
-interface.</p>
+interface or by extending the class <a
+    href="javadoc/core/org/jbehave/core/steps/ParameterConverters.AbstractParameterConverter.html">AbstractParameterConverter</a>
+or the class <a
+    href="javadoc/core/org/jbehave/core/steps/ParameterConverters.AbstractListParameterConverter.html">AbstractListParameterConverter</a>.</p>
 <p>Let's consider the use case where we have persistable objects
 accessible via persister interface from a String identifier. Then a
 custom parameter converter may come in very handy so that the lookup of
@@ -121,18 +161,12 @@ the persistable object is done behind the scenes and does not get in the
 way of the step implementation. E.g. given the converter:</p>
 <script type="syntaxhighlighter" class="brush: java">
 <![CDATA[
-    public class TraderConverter implements ParameterConverter {
+    public class TraderConverter extends AbstractParameterConverter<Trader> {
         private TraderPersister traderPersister = ... // inject persister in converter
 
-        public boolean accept(Type type) {
-            if (type instanceof Class<?>) {
-                return Trader.class.isAssignableFrom((Class<?>) type);
-            }
-            return false;
-        }
-
-        public Object convertValue(String value, Type type) {
-            return traderPersister.retrieveTrader(value);
+        @Override
+        public Trader convertValue(String value, Type type) {
+            return persister.retrieveTrader(value);
         }
     }
 ]]>

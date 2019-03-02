@@ -5,15 +5,15 @@ import static java.util.Arrays.asList;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class Trader implements Comparable<Trader>{
 
     private final String name;
     private String rank = "";
-    private List<Stock> stocks = new ArrayList<Stock>();
+    private List<Stock> stocks = new ArrayList<>();
 
     public Trader(String name, String rank) {
         this.name = name;
@@ -50,6 +50,7 @@ public class Trader implements Comparable<Trader>{
         return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
+    @Override
     public int compareTo(Trader o) {
         return CompareToBuilder.reflectionCompare(this, o);
     }

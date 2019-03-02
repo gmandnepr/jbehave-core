@@ -17,9 +17,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jbehave.core.annotations.AfterScenario.Outcome;
+import org.jbehave.core.annotations.Scope;
 import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.embedder.MetaFilter;
 import org.jbehave.core.model.ExamplesTable;
@@ -35,13 +35,14 @@ import org.jbehave.core.model.StoryDuration;
 import freemarker.ext.beans.BeansWrapper;
 import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModelException;
+import org.jbehave.core.steps.StepCollector;
 
 /**
  * <p>
  * Story reporter that outputs to a template.
  * </p>
  */
-public class TemplateableOutput implements StoryReporter {
+public class TemplateableOutput extends NullStoryReporter {
 
     private final File file;
     private final Keywords keywords;
@@ -50,6 +51,8 @@ public class TemplateableOutput implements StoryReporter {
     private OutputStory outputStory = new OutputStory();
     private OutputScenario outputScenario = new OutputScenario();
     private OutputStep failedStep;
+    private Scope scope;
+    private StepCollector.Stage stage;
 
     public TemplateableOutput(File file, Keywords keywords, TemplateProcessor processor, String templatePath) {
         this.file = file;
@@ -58,139 +61,176 @@ public class TemplateableOutput implements StoryReporter {
         this.templatePath = templatePath;
     }
 
+    @Override
     public void storyNotAllowed(Story story, String filter) {
         this.outputStory.notAllowedBy = filter;
     }
 
+    @Override
     public void beforeStory(Story story, boolean givenStory) {
         if (!givenStory) {
             this.outputStory = new OutputStory();
             this.outputStory.description = story.getDescription().asString();
             this.outputStory.path = story.getPath();
+            this.scope = Scope.STORY;
+            this.stage = StepCollector.Stage.BEFORE;
         }
         if (!story.getMeta().isEmpty()) {
             this.outputStory.meta = new OutputMeta(story.getMeta());
         }
     }
 
+    @Override
     public void narrative(Narrative narrative) {
         if (!narrative.isEmpty()) {
             this.outputStory.narrative = new OutputNarrative(narrative);
         }
     }
 
+    @Override
     public void lifecyle(Lifecycle lifecycle) {
         if(!lifecycle.isEmpty()){
             this.outputStory.lifecycle = new OutputLifecycle(lifecycle);            
         }
     }
 
-
+    @Override
     public void scenarioNotAllowed(Scenario scenario, String filter) {
         this.outputScenario.notAllowedBy = filter;
     }
 
-    public void beforeScenario(String title) {
+    @Override
+    public void beforeScenario(Scenario scenario)
+    {
         if (this.outputScenario.currentExample == null) {
             this.outputScenario = new OutputScenario();
         }
-        this.outputScenario.title = title;
+        this.outputScenario.title = scenario.getTitle();
+        this.scope = Scope.SCENARIO;
+
+        Meta meta = scenario.getMeta();
+        if (!meta.isEmpty()) {
+            this.outputScenario.meta = new OutputMeta(meta);
+        }
     }
 
-    public void beforeStep(String step) {
+    private void addStep(OutputStep outputStep) {
+        if ( scope == Scope.STORY){
+            if ( stage == StepCollector.Stage.BEFORE ){
+                this.outputStory.addBeforeStep(outputStep);
+            } else {
+                this.outputStory.addAfterStep(outputStep);
+            }
+        } else {
+            this.outputScenario.addStep(outputStep);
+        }
     }
 
+    @Override
     public void successful(String step) {
-        this.outputScenario.addStep(new OutputStep(step, "successful"));
+        addStep(new OutputStep(step, "successful"));
     }
 
+    @Override
     public void ignorable(String step) {
-        this.outputScenario.addStep(new OutputStep(step, "ignorable"));
+        addStep(new OutputStep(step, "ignorable"));
     }
 
+    @Override
+    public void comment(String step) {
+        addStep(new OutputStep(step, "comment"));
+    }
+
+    @Override
     public void pending(String step) {
-        this.outputScenario.addStep(new OutputStep(step, "pending"));
+        addStep(new OutputStep(step, "pending"));
     }
 
+    @Override
     public void notPerformed(String step) {
-        this.outputScenario.addStep(new OutputStep(step, "notPerformed"));
+        addStep(new OutputStep(step, "notPerformed"));
     }
 
+    @Override
     public void failed(String step, Throwable storyFailure) {
         this.failedStep = new OutputStep(step, "failed");
         failedStep.failure = storyFailure;
-        this.outputScenario.addStep(failedStep);
+        addStep(failedStep);
     }
 
+    @Override
     public void failedOutcomes(String step, OutcomesTable table) {
         failed(step, table.failureCause());
         this.failedStep.outcomes = table;
     }
 
+    @Override
     public void givenStories(GivenStories givenStories) {
         if (!givenStories.getStories().isEmpty()) {
             this.outputScenario.givenStories = givenStories;
         }
     }
 
+    @Override
     public void givenStories(List<String> storyPaths) {
         givenStories(new GivenStories(StringUtils.join(storyPaths, ",")));
     }
 
-    public void scenarioMeta(Meta meta) {
-        if (!meta.isEmpty()) {
-            this.outputScenario.meta = new OutputMeta(meta);
-        }
-    }
-
+    @Override
     public void beforeExamples(List<String> steps, ExamplesTable table) {
         this.outputScenario.examplesSteps = steps;
         this.outputScenario.examplesTable = table;
     }
 
-    public void example(Map<String, String> parameters) {
+    @Override
+    public void example(Map<String, String> parameters, int exampleIndex) {
         this.outputScenario.examples.add(parameters);
         this.outputScenario.currentExample = parameters;
     }
 
+    @Override
     public void afterExamples() {
         this.outputScenario.currentExample = null;
     }
 
-    public void dryRun() {
-    }
-
+    @Override
     public void afterScenario() {
         if (this.outputScenario.currentExample == null) {
             this.outputStory.scenarios.add(outputScenario);
         }
+        this.scope = Scope.STORY;
+        this.stage = StepCollector.Stage.AFTER;
     }
 
+    @Override
     public void pendingMethods(List<String> methods) {
         this.outputStory.pendingMethods = methods;
     }
 
+    @Override
     public void restarted(String step, Throwable cause) {
-        this.outputScenario.addStep(new OutputRestart(step, cause.getMessage()));
+        addStep(new OutputRestart(step, cause.getMessage()));
     }
     
+    @Override
     public void restartedStory(Story story, Throwable cause) {
-    	this.outputScenario.addStep(new OutputRestart(story.getName(), cause.getMessage()));
+        addStep(new OutputRestart(story.getName(), cause.getMessage()));
     }
 
+    @Override
     public void storyCancelled(Story story, StoryDuration storyDuration) {
         this.outputStory.cancelled = true;
         this.outputStory.storyDuration = storyDuration;
     }
 
+    @Override
     public void afterStory(boolean givenStory) {
         if (!givenStory) {
             Map<String, Object> model = newDataModel();
             model.put("story", outputStory);
             model.put("keywords", new OutputKeywords(keywords));
 
-            BeansWrapper wrapper = BeansWrapper.getDefaultInstance();
-            TemplateHashModel enumModels = wrapper.getEnumModels();
+            TemplateHashModel enumModels = BeansWrapper.getDefaultInstance().getEnumModels();
             TemplateHashModel escapeEnums;
             try {
                 String escapeModeEnum = EscapeMode.class.getCanonicalName();
@@ -217,7 +257,7 @@ public class TemplateableOutput implements StoryReporter {
     }
 
     private Map<String, Object> newDataModel() {
-        return new HashMap<String, Object>();
+        return new HashMap<>();
     }
 
     public static class OutputKeywords {
@@ -230,6 +270,18 @@ public class TemplateableOutput implements StoryReporter {
 
         public String getLifecycle(){
             return keywords.lifecycle();
+        }
+
+        public String getScope(){
+            return keywords.scope();
+        }
+
+        public String getScopeScenario(){
+            return keywords.scopeScenario();
+        }
+
+        public String getScopeStory(){
+            return keywords.scopeStory();
         }
 
         public String getBefore(){
@@ -365,7 +417,9 @@ public class TemplateableOutput implements StoryReporter {
         private OutputLifecycle lifecycle;
         private String notAllowedBy;
         private List<String> pendingMethods;
-        private List<OutputScenario> scenarios = new ArrayList<OutputScenario>();
+        private List<OutputStep> beforeSteps = new ArrayList<>();
+        private List<OutputStep> afterSteps = new ArrayList<>();
+        private List<OutputScenario> scenarios = new ArrayList<>();
         private boolean cancelled;
         private StoryDuration storyDuration;
 
@@ -393,6 +447,22 @@ public class TemplateableOutput implements StoryReporter {
             return notAllowedBy;
         }
 
+        public void addBeforeStep(OutputStep outputStep) {
+            this.beforeSteps.add(outputStep);
+        }
+
+        public void addAfterStep(OutputStep outputStep) {
+            this.afterSteps.add(outputStep);
+        }
+
+        public List<OutputStep> getBeforeSteps() {
+            return beforeSteps;
+        }
+        public List<OutputStep> getAfterSteps() {
+            return afterSteps;
+        }
+
+
         public List<String> getPendingMethods() {
             return pendingMethods;
         }
@@ -419,7 +489,7 @@ public class TemplateableOutput implements StoryReporter {
         }
 
         public Map<String, String> getProperties() {
-            Map<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<>();
             for (String name : meta.getPropertyNames()) {
                 properties.put(name, meta.getProperty(name));
             }
@@ -464,12 +534,30 @@ public class TemplateableOutput implements StoryReporter {
             this.lifecycle = lifecycle;
         }
 
+        public Set<Scope> getScopes() { return lifecycle.getScopes(); };
+
+        public boolean hasBeforeSteps() { return lifecycle.hasBeforeSteps(); }
+
         public List<String> getBeforeSteps(){
             return lifecycle.getBeforeSteps();
         }
 
+        public List<String> getBeforeSteps(Scope scope){
+            return lifecycle.getBeforeSteps(scope);
+        }
+
+        public boolean hasAfterSteps() { return lifecycle.hasAfterSteps(); }
+
         public List<String> getAfterSteps(){
             return lifecycle.getAfterSteps();
+        }
+
+        public List<String> getAfterSteps(Scope scope){
+            return lifecycle.getAfterSteps(scope);
+        }
+
+        public List<String> getAfterSteps(Scope scope, Outcome outcome){
+            return lifecycle.getAfterSteps(scope, outcome);
         }
 
         public Set<Outcome> getOutcomes(){
@@ -492,15 +580,15 @@ public class TemplateableOutput implements StoryReporter {
 
     public static class OutputScenario {
         private String title;
-        private List<OutputStep> steps = new ArrayList<OutputStep>();
+        private List<OutputStep> steps = new ArrayList<>();
         private OutputMeta meta;
         private GivenStories givenStories;
         private String notAllowedBy;
         private List<String> examplesSteps;
         private ExamplesTable examplesTable;
         private Map<String, String> currentExample;
-        private List<Map<String, String>> examples = new ArrayList<Map<String, String>>();
-        private Map<Map<String, String>, List<OutputStep>> stepsByExample = new HashMap<Map<String, String>, List<OutputStep>>();
+        private List<Map<String, String>> examples = new ArrayList<>();
+        private Map<Map<String, String>, List<OutputStep>> stepsByExample = new HashMap<>();
 
         public String getTitle() {
             return title;
@@ -512,7 +600,7 @@ public class TemplateableOutput implements StoryReporter {
             } else {
                 List<OutputStep> currentExampleSteps = stepsByExample.get(currentExample);
                 if (currentExampleSteps == null) {
-                    currentExampleSteps = new ArrayList<OutputStep>();
+                    currentExampleSteps = new ArrayList<>();
                     stepsByExample.put(currentExample, currentExampleSteps);
                 }
                 currentExampleSteps.add(outputStep);
@@ -526,7 +614,7 @@ public class TemplateableOutput implements StoryReporter {
         public List<OutputStep> getStepsByExample(Map<String, String> example) {
             List<OutputStep> steps = stepsByExample.get(example);
             if (steps == null) {
-                return new ArrayList<OutputStep>();
+                return new ArrayList<>();
             }
             return steps;
         }
@@ -637,7 +725,7 @@ public class TemplateableOutput implements StoryReporter {
             // note that escaping the stepPattern string only works
             // because placeholders for parameters do not contain
             // special chars (the placeholder is {0} etc)
-            String escapedStep = escapeString(outputFormat, stepPattern);
+            String escapedStep = outputFormat.escapeString(stepPattern);
             if (!parameters.isEmpty()) {
                 try {
                     return MessageFormat.format(escapedStep, formatParameters(outputFormat, parameterPattern));
@@ -648,20 +736,10 @@ public class TemplateableOutput implements StoryReporter {
             return escapedStep;
         }
 
-        private String escapeString(EscapeMode outputFormat, String string) {
-            if(outputFormat==EscapeMode.HTML) {
-                return StringEscapeUtils.escapeHtml(string);
-            } else if(outputFormat==EscapeMode.XML) {
-                return StringEscapeUtils.escapeXml(string);
-            } else {
-                return string;
-            }
-        }
-
         private Object[] formatParameters(EscapeMode outputFormat, String parameterPattern) {
             Object[] arguments = new Object[parameters.size()];
             for (int a = 0; a < parameters.size(); a++) {
-                arguments[a] = MessageFormat.format(parameterPattern, escapeString(outputFormat, parameters.get(a).getValue()));
+                arguments[a] = MessageFormat.format(parameterPattern, outputFormat.escapeString(parameters.get(a).getValue()));
             }
             return arguments;
         }
@@ -677,7 +755,7 @@ public class TemplateableOutput implements StoryReporter {
         }
 
         private List<OutputParameter> findParameters(String start, String end) {
-            List<OutputParameter> parameters = new ArrayList<OutputParameter>();
+            List<OutputParameter> parameters = new ArrayList<>();
             Matcher matcher = Pattern.compile("(" + start + ".*?" + end + ")(\\W|\\Z)",
                     Pattern.DOTALL).matcher(step);
             while (matcher.find()) {

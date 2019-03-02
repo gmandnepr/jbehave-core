@@ -54,11 +54,11 @@ public class MostUsefulConfiguration extends Configuration {
         useKeywords(new LocalizedKeywords());
         useStoryControls(new StoryControls());
         useStoryLoader(new LoadFromClasspath());
-        useStoryParser(new RegexStoryParser(keywords()));
+        useStoryParser(new RegexStoryParser(keywords(), storyLoader(), tableTransformers()));
         useFailureStrategy(new RethrowingFailure());
         usePendingStepStrategy(new PassingUponPendingStep());
-        useStepCollector(new MarkUnmatchedStepsAsPending());
         useStepFinder(new StepFinder());
+        useStepCollector(new MarkUnmatchedStepsAsPending(stepFinder(), keywords()));
         useStepPatternParser(new RegexPrefixCapturingPatternParser());
         useStepMonitor(new SilentStepMonitor());
         useStepdocReporter(new PrintStreamStepdocReporter());

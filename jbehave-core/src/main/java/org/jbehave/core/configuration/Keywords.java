@@ -5,8 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.steps.StepType;
 
 import static java.util.Arrays.asList;
@@ -43,12 +44,17 @@ public class Keywords {
     public static final String THEN = "Then";
     public static final String AND = "And";
     public static final String IGNORABLE = "Ignorable";
+    public static final String COMPOSITE = "Composite";
+    public static final String PRIORITY = "Priority";
     public static final String PENDING = "Pending";
     public static final String NOT_PERFORMED = "NotPerformed";
     public static final String FAILED = "Failed";
     public static final String DRY_RUN = "DryRun";
     public static final String STORY_CANCELLED = "StoryCancelled";
     public static final String DURATION = "Duration";
+    public static final String SCOPE = "Scope";
+    public static final String SCOPE_SCENARIO = "ScopeScenario";
+    public static final String SCOPE_STORY = "ScopeStory";
     public static final String OUTCOME = "Outcome";
     public static final String OUTCOME_ANY = "OutcomeAny";
     public static final String OUTCOME_SUCCESS = "OutcomeSuccess";
@@ -57,14 +63,14 @@ public class Keywords {
     public static final String OUTCOME_VALUE = "OutcomeValue";
     public static final String OUTCOME_MATCHER = "OutcomeMatcher";
     public static final String OUTCOME_VERIFIED = "OutcomeVerified";
-	public static final String META_FILTER = "MetaFilter";
+    public static final String META_FILTER = "MetaFilter";
     public static final String YES = "Yes";
     public static final String NO = "No";
 
     public static final List<String> KEYWORDS = asList(META, META_PROPERTY, NARRATIVE, IN_ORDER_TO, AS_A, I_WANT_TO, SO_THAT,
             SCENARIO, GIVEN_STORIES, LIFECYCLE, BEFORE, AFTER, EXAMPLES_TABLE, EXAMPLES_TABLE_ROW, EXAMPLES_TABLE_HEADER_SEPARATOR,
-            EXAMPLES_TABLE_VALUE_SEPARATOR, EXAMPLES_TABLE_IGNORABLE_SEPARATOR, GIVEN, WHEN, THEN, AND, IGNORABLE,
-            PENDING, NOT_PERFORMED, FAILED, DRY_RUN, STORY_CANCELLED, DURATION, OUTCOME, OUTCOME_ANY, OUTCOME_SUCCESS, OUTCOME_FAILURE,
+            EXAMPLES_TABLE_VALUE_SEPARATOR, EXAMPLES_TABLE_IGNORABLE_SEPARATOR, GIVEN, WHEN, THEN, AND, IGNORABLE, COMPOSITE, PRIORITY,
+            PENDING, NOT_PERFORMED, FAILED, DRY_RUN, STORY_CANCELLED, DURATION, SCOPE, SCOPE_SCENARIO, SCOPE_STORY, OUTCOME, OUTCOME_ANY, OUTCOME_SUCCESS, OUTCOME_FAILURE,
             OUTCOME_DESCRIPTION, OUTCOME_VALUE, OUTCOME_MATCHER, OUTCOME_VERIFIED, META_FILTER, YES, NO);
 
 
@@ -90,28 +96,33 @@ public class Keywords {
     private final String then;
     private final String and;
     private final String ignorable;
+    private final String composite;
+    private final String priority;
     private final String pending;
     private final String notPerformed;
     private final String failed;
     private final String dryRun;
     private final String storyCancelled;
     private final String duration;
-	private final String outcome;
-	private final String outcomeAny;
-	private final String outcomeSuccess;
-	private final String outcomeFailure;
+    private final String scope;
+    private final String scopeScenario;
+    private final String scopeStory;
+    private final String outcome;
+    private final String outcomeAny;
+    private final String outcomeSuccess;
+    private final String outcomeFailure;
     private final String outcomeDescription;
     private final String outcomeValue;
     private final String outcomeMatcher;
     private final String outcomeVerified;
-	private final String metaFilter;
+    private final String metaFilter;
     private final String yes;
     private final String no;
-    private final Map<StepType, String> startingWordsByType = new HashMap<StepType, String>();
+    private final Map<StepType, String> startingWordsByType = new HashMap<>();
 
 
     public static Map<String, String> defaultKeywords() {
-        Map<String, String> keywords = new HashMap<String, String>();
+        Map<String, String> keywords = new HashMap<>();
         keywords.put(META, "Meta:");
         keywords.put(META_PROPERTY, "@");
         keywords.put(NARRATIVE, "Narrative:");
@@ -134,12 +145,17 @@ public class Keywords {
         keywords.put(THEN, "Then");
         keywords.put(AND, "And");
         keywords.put(IGNORABLE, "!--");
+        keywords.put(COMPOSITE, "Composite:");
+        keywords.put(PRIORITY, "Priority:");
         keywords.put(PENDING, "PENDING");
         keywords.put(NOT_PERFORMED, "NOT PERFORMED");
         keywords.put(FAILED, "FAILED");
         keywords.put(DRY_RUN, "DRY RUN");
         keywords.put(STORY_CANCELLED, "STORY CANCELLED");
         keywords.put(DURATION, "DURATION");
+        keywords.put(SCOPE, "Scope:");
+        keywords.put(SCOPE_SCENARIO, "SCENARIO");
+        keywords.put(SCOPE_STORY, "STORY");
         keywords.put(OUTCOME, "Outcome:");
         keywords.put(OUTCOME_ANY, "ANY");
         keywords.put(OUTCOME_SUCCESS, "SUCCESS");
@@ -189,12 +205,17 @@ public class Keywords {
         this.then = keyword(THEN, keywords);
         this.and = keyword(AND, keywords);
         this.ignorable = keyword(IGNORABLE, keywords);
+        this.composite = keyword(COMPOSITE, keywords);
+        this.priority = keyword(PRIORITY, keywords);
         this.pending = keyword(PENDING, keywords);
         this.notPerformed = keyword(NOT_PERFORMED, keywords);
         this.failed = keyword(FAILED, keywords);
         this.dryRun = keyword(DRY_RUN, keywords);
         this.storyCancelled = keyword(STORY_CANCELLED, keywords);
         this.duration = keyword(DURATION, keywords);
+        this.scope = keyword(SCOPE, keywords);
+        this.scopeScenario = keyword(SCOPE_SCENARIO, keywords);
+        this.scopeStory = keyword(SCOPE_STORY, keywords);
         this.outcome = keyword(OUTCOME, keywords);
         this.outcomeAny = keyword(OUTCOME_ANY, keywords);
         this.outcomeSuccess = keyword(OUTCOME_SUCCESS, keywords);
@@ -311,6 +332,14 @@ public class Keywords {
         return ignorable;
     }
 
+    public String composite() {
+        return composite;
+    }
+
+    public String priority() {
+        return priority;
+    }
+
     public String pending() {
         return pending;
     }
@@ -335,29 +364,51 @@ public class Keywords {
         return duration;
     }
 
-	public String outcome() {
-		return outcome;
-	}
+    public String scope() { return scope; }
 
-	public String outcomeAny(){
-		return outcomeAny;
-	}
-	
-	public String outcomeSuccess(){
-		return outcomeSuccess;
-	}
-	
-	public String outcomeFailure(){
-		return outcomeFailure;
-	}
+    public String scopeScenario() { return scopeScenario; }
 
-	public List<String> outcomeFields() {
+    public String scopeStory() { return scopeStory; }
+
+    public String outcome() {
+        return outcome;
+    }
+
+    public String outcomeAny(){
+        return outcomeAny;
+    }
+
+    public String outcomeSuccess(){
+        return outcomeSuccess;
+    }
+
+    public String outcomeFailure(){
+        return outcomeFailure;
+    }
+
+    public String outcomeDescription(){
+        return outcomeDescription;
+    }
+
+    public String outcomeValue(){
+        return outcomeValue;
+    }
+
+    public String outcomeMatcher(){
+        return outcomeMatcher;
+    }
+
+    public String outcomeVerified(){
+        return outcomeVerified;
+    }
+
+    public List<String> outcomeFields() {
         return asList(outcomeDescription, outcomeValue, outcomeMatcher, outcomeVerified);
     }
 
-	public String metaFilter() {
-		return metaFilter;
-	}
+    public String metaFilter() {
+        return metaFilter;
+    }
 
     public String yes() {
         return yes;
@@ -372,7 +423,7 @@ public class Keywords {
     }
 
     public String[] startingWords() {
-        List<String> words = new ArrayList<String>();
+        List<String> words = new ArrayList<>();
         for (String word : startingWordsByType().values()) {
             words.addAll(asList(synonymsOf(word)));
         }
@@ -403,8 +454,12 @@ public class Keywords {
 
     public String stepWithoutStartingWord(String stepAsString, StepType stepType) {
         String startingWord = startingWord(stepAsString, stepType);
-        return stepAsString.substring(startingWord.length() + 1); // 1 for the
-                                                                  // space after
+        return stepAsString.substring(startingWord.length() + 1); // 1 for the space after
+    }
+
+    public String stepWithoutStartingWord(String stepAsString) {
+        StepType stepType = stepTypeFor(stepAsString);
+        return stepWithoutStartingWord(stepAsString, stepType);
     }
 
     public String startingWord(String stepAsString, StepType stepType) throws StartingWordNotFound {
@@ -444,7 +499,13 @@ public class Keywords {
     }
 
     public boolean stepStartsWithWord(String step, String word) {
-        return step.startsWith(word + " "); // space after qualifies it as word
+        return stepStartsWithWords(step, word);
+    }
+
+    public boolean stepStartsWithWords(String step, String... words) {
+        char separator = ' '; // space after qualifies it as word
+        String start = StringUtils.join(words, separator) + separator;
+        return step.startsWith(start);
     }
 
     public String startingWordFor(StepType stepType) {
@@ -488,8 +549,5 @@ public class Keywords {
         public StartingWordNotFound(StepType stepType, Map<StepType, String> startingWordsByType) {
             super("No starting word found of type '" + stepType + "' amongst '" + startingWordsByType + "'");
         }
-
     }
-
-
 }

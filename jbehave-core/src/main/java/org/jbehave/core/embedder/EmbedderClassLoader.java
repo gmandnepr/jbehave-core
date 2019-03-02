@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * EmbedderClassLoader is a URLClassLoader with a specified list of classpath
@@ -49,7 +49,7 @@ public class EmbedderClassLoader extends URLClassLoader {
     }
 
     List<String> asShortPaths(URL... urls) {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (URL url : urls) {
             String path = url.getPath();
             if (isJar(path)) {
@@ -70,7 +70,7 @@ public class EmbedderClassLoader extends URLClassLoader {
     }
 
     private static URL[] classpathURLs(List<String> elements) {
-        List<URL> urls = new ArrayList<URL>();
+        List<URL> urls = new ArrayList<>();
         if (elements != null) {
             for (String element : elements) {
                 urls.add(toURL(element));

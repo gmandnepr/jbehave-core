@@ -1,7 +1,7 @@
 package org.jbehave.core.io.rest;
 
 import static java.text.MessageFormat.format;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.jbehave.core.io.CodeLocations.codeLocationFromPath;
 import static org.jbehave.core.io.rest.filesystem.FilesystemUtils.fileNameWithoutExt;
 import static org.jbehave.core.io.rest.filesystem.FilesystemUtils.normalisedPathOf;
@@ -30,14 +30,16 @@ public abstract class IndexWithBreadcrumbs implements ResourceIndexer {
 		this.nameResolver = nameResolver;
 	}
 
-	public Map<String, Resource> indexResources(String rootURI) {
+	@Override
+    public Map<String, Resource> indexResources(String rootURI) {
 		String entity = get(uri(rootURI));
 		Map<String, Resource> index = createIndexFromEntity(rootURI, entity);
 		addBreadcrumbs(index);
 		return index;
 	}
 
-	public Map<String, Resource> indexResources(String rootURI,
+	@Override
+    public Map<String, Resource> indexResources(String rootURI,
 			String rootPath, String syntax, String includes) {
 		Map<String, Resource> index = createIndexFromPaths(rootURI, rootPath,
 				syntax, includes);
@@ -47,7 +49,7 @@ public abstract class IndexWithBreadcrumbs implements ResourceIndexer {
 
 	protected Map<String, Resource> createIndexFromPaths(String rootURI,
 			String rootPath, String syntax, String includes) {
-		Map<String, Resource> index = new HashMap<String, Resource>();
+		Map<String, Resource> index = new HashMap<>();
 		List<String> paths = new StoryFinder().findPaths(
 				codeLocationFromPath(rootPath), includes, EMPTY);
 		for (String path : paths) {
@@ -99,7 +101,7 @@ public abstract class IndexWithBreadcrumbs implements ResourceIndexer {
 
 	protected void addBreadcrumbs(Map<String, Resource> index) {
 		for (Resource resource : index.values()) {
-			List<String> breadcrumbs = new ArrayList<String>();
+			List<String> breadcrumbs = new ArrayList<>();
 			collectBreadcrumbs(breadcrumbs, resource, index);
 			resource.setBreadcrumbs(breadcrumbs);
 		}
@@ -132,7 +134,8 @@ public abstract class IndexWithBreadcrumbs implements ResourceIndexer {
 	
 	public static class ToLowerCase implements ResourceNameResolver {
 
-		public String resolve(String input) {
+		@Override
+        public String resolve(String input) {
 			return input.toLowerCase();
 		}
 

@@ -38,8 +38,8 @@ public class StoryManager {
 	private final ExecutorService executorService;
 	private final InjectableStepsFactory stepsFactory;
 	private final PerformableTree performableTree;
-	private final Map<String, RunningStory> runningStories = new HashMap<String, RunningStory>();
-	private final Map<MetaFilter, List<Story>> excludedStories = new HashMap<MetaFilter, List<Story>>();
+	private final Map<String, RunningStory> runningStories = new HashMap<>();
+	private final Map<MetaFilter, List<Story>> excludedStories = new HashMap<>();
 	private RunContext context;
 	private StoryTimeouts timeouts;
 	
@@ -61,6 +61,14 @@ public class StoryManager {
 		return performableTree.storyOfPath(configuration, storyPath);
 	}
 
+	public List<Story> storiesOfPaths(List<String> storyPaths) {
+		List<Story> stories = new ArrayList<>(storyPaths.size());
+		for (String storyPath : storyPaths) {
+			stories.add(storyOfPath(storyPath));
+		}
+		return stories;
+	}
+
 	public Story storyOfText(String storyAsText, String storyId) {
 		return performableTree.storyOfText(configuration, storyAsText, storyId);
 	}
@@ -74,7 +82,7 @@ public class StoryManager {
 	}
 
 	public List<StoryOutcome> outcomes() {
-		List<StoryOutcome> outcomes = new ArrayList<StoryOutcome>();
+		List<StoryOutcome> outcomes = new ArrayList<>();
 		for (RunningStory story : runningStories.values()) {
 			outcomes.add(new StoryOutcome(story));
 		}
@@ -83,21 +91,13 @@ public class StoryManager {
 
 	public void runStoriesAsPaths(List<String> storyPaths, MetaFilter filter,
 			BatchFailures failures) {
-		runStories(storiesOf(storyPaths), filter, failures);
+		runStories(storiesOfPaths(storyPaths), filter, failures);
 	}
 
-	private List<Story> storiesOf(List<String> storyPaths) {
-		List<Story> stories = new ArrayList<Story>();
-		for (String storyPath : storyPaths) {
-			stories.add(storyOfPath(storyPath));
-		}
-		return stories;
-	}
-	
 	public void runStories(List<Story> stories, MetaFilter filter,
 			BatchFailures failures) {
 		// create new run context
-		context = performableTree.newRunContext(configuration, stepsFactory,
+		context = performableTree.newRunContext(configuration, stepsFactory.createCandidateSteps(),
 				embedderMonitor, filter, failures);
 
 		// add stories
@@ -150,7 +150,7 @@ public class StoryManager {
 	public List<Story> notAllowedBy(MetaFilter filter) {
 		List<Story> stories = excludedStories.get(filter);
 		if (stories == null) {
-			stories = new ArrayList<Story>();
+			stories = new ArrayList<>();
 			excludedStories.put(filter, stories);
 		}
 		return stories;
@@ -207,6 +207,7 @@ public class StoryManager {
 					}
                 } else {
                 	started = false;
+                	allDone = false;
                 }
             }
             tickTock();
@@ -283,11 +284,12 @@ public class StoryManager {
 			this.timeouts = timeouts;
 		}
 
-		public ThrowableStory call() throws Exception {
+		@Override
+        public ThrowableStory call() {
+		    startedAtMillis = System.currentTimeMillis();
 			String storyPath = story.getPath();
 			try {
 				embedderMonitor.runningStory(storyPath);
-				startedAtMillis = System.currentTimeMillis();
 				performableTree.perform(context, story);
 			} catch (Throwable e) {
 				if (embedderControls.ignoreFailureInStories()) {

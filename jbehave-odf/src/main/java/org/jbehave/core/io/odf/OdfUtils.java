@@ -1,6 +1,6 @@
 package org.jbehave.core.io.odf;
 
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 import static org.odftoolkit.simple.common.TextExtractor.newOdfTextExtractor;
 
 import java.io.InputStream;
@@ -29,7 +29,7 @@ public class OdfUtils {
     }
 
     public static String parseOdt(TextDocument document) {
-        List<String> lines = new ArrayList<String>();
+        List<String> lines = new ArrayList<>();
 
         try {
             NodeList list = document.getContentRoot().getChildNodes();
@@ -49,7 +49,7 @@ public class OdfUtils {
     }
 
     private static Collection<String> parseTable(Node item) {
-        ArrayList<String> lines = new ArrayList<String>();
+        ArrayList<String> lines = new ArrayList<>();
         Table table = Table.getInstance((TableTableElement) item);
         for (Row row : table.getRowList()) {
             lines.add(parseTableRow(row));

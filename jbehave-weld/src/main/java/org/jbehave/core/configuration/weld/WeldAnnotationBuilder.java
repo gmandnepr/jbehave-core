@@ -9,7 +9,6 @@ import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.PrintStreamAnnotationMonitor;
 import org.jbehave.core.steps.CompositeStepsFactory;
 import org.jbehave.core.steps.InjectableStepsFactory;
-import org.jbehave.core.steps.ParameterConverters;
 
 /**
  * Extends {@link AnnotationBuilder} to provide Weld-based dependency injection
@@ -58,11 +57,5 @@ public class WeldAnnotationBuilder extends AnnotationBuilder {
             return new CompositeStepsFactory(stepsFactory, factoryUsingSteps);
         }
         return factoryUsingSteps;
-    }
-    
-    @Override
-    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder) {
-        ParameterConverters converters = super.parameterConverters(annotationFinder);
-        return converters;
     }
 }

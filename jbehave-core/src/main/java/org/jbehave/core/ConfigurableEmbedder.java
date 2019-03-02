@@ -61,7 +61,8 @@ public abstract class ConfigurableEmbedder implements Embeddable {
 	private InjectableStepsFactory stepsFactory;
 	private List<CandidateSteps> candidateSteps;
 
-	public void useEmbedder(Embedder embedder) {
+	@Override
+    public void useEmbedder(Embedder embedder) {
 		this.embedder = embedder;
 	}
 
@@ -80,16 +81,18 @@ public abstract class ConfigurableEmbedder implements Embeddable {
 	/**
 	 * @deprecated Use {@link #useStepsFactory(InjectableStepsFactory)}
 	 */
-	public void addSteps(CandidateSteps... steps) {
+	@Deprecated
+    public void addSteps(CandidateSteps... steps) {
 		addSteps(asList(steps));
 	}
 
 	/**
 	 * @deprecated Use {@link #useStepsFactory(InjectableStepsFactory)}
 	 */
-	public void addSteps(List<CandidateSteps> steps) {
+	@Deprecated
+    public void addSteps(List<CandidateSteps> steps) {
 		if ( candidateSteps == null ){
-			this.candidateSteps = new ArrayList<CandidateSteps>();
+			this.candidateSteps = new ArrayList<>();
 		}
 		this.candidateSteps.addAll(steps);
 	}
@@ -97,7 +100,8 @@ public abstract class ConfigurableEmbedder implements Embeddable {
 	/**
 	 * @deprecated Use {@link #stepsFactory()}
 	 */
-	public List<CandidateSteps> candidateSteps() {
+	@Deprecated
+    public List<CandidateSteps> candidateSteps() {
 		return candidateSteps;
 	}
 

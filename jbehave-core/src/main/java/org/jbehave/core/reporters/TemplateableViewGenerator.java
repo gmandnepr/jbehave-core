@@ -24,9 +24,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.io.IOUtils;
 import org.jbehave.core.io.StoryNameResolver;
 import org.jbehave.core.model.StoryLanes;
@@ -72,6 +72,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
         this.processor = processor;
     }
 
+    @Override
     public Properties defaultViewProperties() {
         Properties properties = new Properties();
         properties.setProperty("encoding", "ISO-8859-1");
@@ -93,6 +94,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
         dataModel.put("encoding", this.viewProperties.getProperty("encoding"));
 	}
 
+    @Override
     public void generateMapsView(File outputDirectory, StoryMaps storyMaps, Properties viewProperties) {
         this.viewProperties = mergeWithDefault(viewProperties);
         String outputName = templateResource("viewDirectory") + "/maps.html";
@@ -104,6 +106,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
         generateViewsIndex(outputDirectory);
     }
 
+    @Override
     public void generateReportsView(File outputDirectory, List<String> formats, Properties viewProperties) {
         this.viewProperties = mergeWithDefault(viewProperties);
         String outputName = templateResource("viewDirectory") + "/reports.html";
@@ -127,7 +130,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
 		} catch (IOException e) {
 			// story durations file not found - carry on
 		}
-		Map<String,Long> durations = new HashMap<String, Long>();
+		Map<String,Long> durations = new HashMap<>();
 		for ( Object key : p.keySet() ){
 			durations.put(toReportPath(key), toMillis(p.get(key)));
 		}
@@ -150,7 +153,8 @@ public class TemplateableViewGenerator implements ViewGenerator {
         write(outputDirectory, outputName, viewsTemplate, dataModel);
     }
 
-	public ReportsCount getReportsCount() {
+	@Override
+    public ReportsCount getReportsCount() {
         int stories = countStoriesWithScenarios();
         int storiesNotAllowed = count("notAllowed", reports);
         int storiesPending = count("pending", reports);
@@ -187,7 +191,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
     }
 
     private List<String> mergeFormatsWithDefaults(List<String> formats) {
-        List<String> merged = new ArrayList<String>();
+        List<String> merged = new ArrayList<>();
         merged.addAll(asList(templateResource("defaultFormats").split(",")));
         merged.addAll(formats);
         return merged;
@@ -199,9 +203,9 @@ public class TemplateableViewGenerator implements ViewGenerator {
             String nonDecoratedTemplate = templateResource("nonDecorated");
             String viewDirectory = templateResource("viewDirectory");
             boolean decorateNonHtml = Boolean.valueOf(templateResource("decorateNonHtml"));
-            List<Report> reports = new ArrayList<Report>();
+            List<Report> reports = new ArrayList<>();
             for (String name : reportFiles.keySet()) {
-                Map<String, File> filesByFormat = new HashMap<String, File>();
+                Map<String, File> filesByFormat = new HashMap<>();
                 for (File file : reportFiles.get(name)) {
                     String fileName = file.getName();
                     String format = FilenameUtils.getExtension(fileName);
@@ -232,11 +236,12 @@ public class TemplateableViewGenerator implements ViewGenerator {
 
     SortedMap<String, List<File>> readReportFiles(File outputDirectory, final String outputName,
             final List<String> formats) {
-        SortedMap<String, List<File>> reportFiles = new TreeMap<String, List<File>>();
+        SortedMap<String, List<File>> reportFiles = new TreeMap<>();
         if (outputDirectory == null || !outputDirectory.exists()) {
             return reportFiles;
         }
         String[] fileNames = outputDirectory.list(new FilenameFilter() {
+            @Override
             public boolean accept(File dir, String name) {
                 return !name.equals(outputName) && hasFormats(name, formats);
             }
@@ -254,7 +259,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
             String name = FilenameUtils.getBaseName(fileName);
             List<File> filesByName = reportFiles.get(name);
             if (filesByName == null) {
-                filesByName = new ArrayList<File>();
+                filesByName = new ArrayList<>();
                 reportFiles.put(name, filesByName);
             }
             filesByName.add(new File(outputDirectory, fileName));
@@ -280,7 +285,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
     }
 
     private Map<String, Object> newDataModel() {
-        return new HashMap<String, Object>();
+        return new HashMap<>();
     }
 
     @SuppressWarnings("serial")
@@ -303,7 +308,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
     public static class Reports {
     	public enum ViewType { LIST };
     	
-        private final Map<String, Report> reports = new HashMap<String, Report>();
+        private final Map<String, Report> reports = new HashMap<>();
         private final StoryNameResolver nameResolver;
 		private ViewType viewType = ViewType.LIST;
 
@@ -322,13 +327,13 @@ public class TemplateableViewGenerator implements ViewGenerator {
         }
         
         public List<Report> getReports() {
-            List<Report> list = new ArrayList<Report>(reports.values());
+            List<Report> list = new ArrayList<>(reports.values());
             Collections.sort(list);
             return list;
         }
 
         public List<String> getReportNames() {
-            List<String> list = new ArrayList<String>(reports.keySet());
+            List<String> list = new ArrayList<>(reports.keySet());
             Collections.sort(list);
             return list;
         }
@@ -351,7 +356,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
         }
 
         private Report totals(Collection<Report> values) {
-            Map<String, Integer> totals = new HashMap<String, Integer>();
+            Map<String, Integer> totals = new HashMap<>();
             for (Report report : values) {
                 Map<String, Integer> stats = report.getStats();
                 for (String key : stats.keySet()) {
@@ -417,7 +422,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
         public Map<String, Integer> getStats() {
             if (stats == null) {
                 Properties p = asProperties("stats");
-                stats = new HashMap<String, Integer>();
+                stats = new HashMap<>();
                 for (Enumeration<?> e = p.propertyNames(); e.hasMoreElements();) {
                     String key = (String) e.nextElement();
                     stats.put(key, valueOf(key, p));
@@ -434,6 +439,7 @@ public class TemplateableViewGenerator implements ViewGenerator {
             }
         }
 
+        @Override
         public int compareTo(Report that) {
             return CompareToBuilder.reflectionCompare(this.getName(), that.getName());
         }

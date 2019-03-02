@@ -45,8 +45,9 @@ public class LoadFromRelativeFile implements ResourceLoader, StoryLoader {
         this.location = location;
     }
     
+    @Override
     public String loadResourceAsText(String resourcePath) {
-        List<String> traversalPaths = new ArrayList<String>();
+        List<String> traversalPaths = new ArrayList<>();
         String locationPath = normalise(new File(CodeLocations.getPathFromURL(location)).getAbsolutePath());
         for (StoryFilePath traversal : traversals) {
             String filePath = locationPath.replace(traversal.toRemove, traversal.relativePath) + "/" + resourcePath;
@@ -60,8 +61,9 @@ public class LoadFromRelativeFile implements ResourceLoader, StoryLoader {
         throw new StoryResourceNotFound(resourcePath, traversalPaths);
     }
 
+    @Override
     public String loadStoryAsText(String storyPath) {
-        List<String> traversalPaths = new ArrayList<String>();
+        List<String> traversalPaths = new ArrayList<>();
         String locationPath = new File(CodeLocations.getPathFromURL(location)).getAbsolutePath();
         for (StoryFilePath traversal : traversals) {
             String filePath = locationPath.replace(traversal.toRemove, traversal.relativePath) + "/" + storyPath;

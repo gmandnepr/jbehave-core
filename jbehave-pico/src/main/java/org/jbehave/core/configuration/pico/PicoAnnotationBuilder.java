@@ -9,6 +9,8 @@ import org.jbehave.core.configuration.AnnotationFinder;
 import org.jbehave.core.configuration.AnnotationMonitor;
 import org.jbehave.core.configuration.AnnotationRequired;
 import org.jbehave.core.configuration.Configuration;
+import org.jbehave.core.io.ResourceLoader;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.steps.CompositeStepsFactory;
 import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.ParameterConverters;
@@ -37,12 +39,13 @@ public class PicoAnnotationBuilder extends AnnotationBuilder {
         super(annotatedClass, annotationMonitor);
     }
 
+    @Override
     public Configuration buildConfiguration() throws AnnotationRequired {
         AnnotationFinder finder = annotationFinder();
         if (finder.isAnnotationPresent(UsingPico.class)) {
             @SuppressWarnings("rawtypes")
             List<Class> moduleClasses = finder.getAnnotatedValues(UsingPico.class, Class.class, "modules");
-            List<PicoModule> modules = new ArrayList<PicoModule>();
+            List<PicoModule> modules = new ArrayList<>();
             for (Class<PicoModule> moduleClass : moduleClasses) {
                 try {
                     modules.add(moduleClass.newInstance());
@@ -67,10 +70,11 @@ public class PicoAnnotationBuilder extends AnnotationBuilder {
         }
         return factoryUsingSteps;
     }
-    
+
     @Override
-    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder) {
-        ParameterConverters converters = super.parameterConverters(annotationFinder);
+    protected ParameterConverters parameterConverters(AnnotationFinder annotationFinder, ResourceLoader resourceLoader,
+            TableTransformers tableTransformers) {
+        ParameterConverters converters = super.parameterConverters(annotationFinder, resourceLoader, tableTransformers);
         if (container != null) {
             return converters.addConverters(container.getComponents(ParameterConverter.class));
         }

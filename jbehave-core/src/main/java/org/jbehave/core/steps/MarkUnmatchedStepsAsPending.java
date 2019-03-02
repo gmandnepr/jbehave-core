@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.jbehave.core.annotations.AfterScenario.Outcome;
 import org.jbehave.core.annotations.ScenarioType;
+import org.jbehave.core.annotations.Scope;
 import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.i18n.LocalizedKeywords;
 import org.jbehave.core.model.Lifecycle;
@@ -21,6 +22,8 @@ import org.jbehave.core.steps.StepCreator.PendingStep;
  * {@link StepFinder} to collect and prioritise {@link StepCandidate}s.
  */
 public class MarkUnmatchedStepsAsPending implements StepCollector {
+
+    private static final StepMonitor DEFAULT_STEP_MONITOR = new NullStepMonitor();
 
     private final StepFinder stepFinder;
     private final Keywords keywords;
@@ -37,30 +40,33 @@ public class MarkUnmatchedStepsAsPending implements StepCollector {
         this(new StepFinder(), keywords);
     }
 
-   public MarkUnmatchedStepsAsPending(StepFinder stepFinder, Keywords keywords) {
+    public MarkUnmatchedStepsAsPending(StepFinder stepFinder, Keywords keywords) {
         this.stepFinder = stepFinder;
         this.keywords = keywords;
     }
 
+     @Override
      public List<Step> collectBeforeOrAfterStoriesSteps(List<CandidateSteps> candidateSteps, Stage stage) {
-        List<Step> steps = new ArrayList<Step>();
+        List<Step> steps = new ArrayList<>();
         for (CandidateSteps candidates : candidateSteps) {
             steps.addAll(createSteps(candidates.listBeforeOrAfterStories(), stage));
         }
         return steps;
     }
 
+    @Override
     public List<Step> collectBeforeOrAfterStorySteps(List<CandidateSteps> candidateSteps, Story story, Stage stage,
             boolean givenStory) {
-        List<Step> steps = new ArrayList<Step>();
+        List<Step> steps = new ArrayList<>();
         for (CandidateSteps candidates : candidateSteps) {
             steps.addAll(createSteps(candidates.listBeforeOrAfterStory(givenStory), story.getMeta(), stage));
         }
         return steps;
     }
 
+    @Override
     public List<Step> collectBeforeOrAfterScenarioSteps(List<CandidateSteps> candidateSteps, Meta storyAndScenarioMeta, Stage stage, ScenarioType type) {
-        List<Step> steps = new ArrayList<Step>();
+        List<Step> steps = new ArrayList<>();
         for (CandidateSteps candidates : candidateSteps) {
             List<BeforeOrAfterStep> beforeOrAfterScenarioSteps = candidates.listBeforeOrAfterScenario(type);
             if (stage == Stage.BEFORE) {
@@ -72,28 +78,40 @@ public class MarkUnmatchedStepsAsPending implements StepCollector {
         return steps;
     }
 
+    @Override
     public List<Step> collectLifecycleSteps(List<CandidateSteps> candidateSteps, Lifecycle lifecycle, Meta storyAndScenarioMeta, Stage stage) {
-        List<Step> steps = new ArrayList<Step>();
-        Map<String, String> namedParameters = new HashMap<String, String>();
+        return collectLifecycleSteps(candidateSteps, lifecycle, storyAndScenarioMeta, stage, Scope.SCENARIO);
+    }
+
+    @Override
+    public List<Step> collectLifecycleSteps(List<CandidateSteps> candidateSteps, Lifecycle lifecycle, Meta storyAndScenarioMeta, Stage stage, Scope scope) {
+        List<StepCandidate> allCandidates = stepFinder.collectCandidates(candidateSteps);
+        List<Step> steps = new ArrayList<>();
+        Map<String, String> namedParameters = new HashMap<>();
         if (stage == Stage.BEFORE) {
-            addMatchedSteps(lifecycle.getBeforeSteps(), steps, namedParameters, candidateSteps);
+            addMatchedSteps(lifecycle.getBeforeSteps(scope), steps, namedParameters, allCandidates, null,
+                    DEFAULT_STEP_MONITOR);
         } else {
-            addMatchedSteps(lifecycle.getAfterSteps(Outcome.ANY, storyAndScenarioMeta), steps, namedParameters, candidateSteps, Outcome.ANY);
-            addMatchedSteps(lifecycle.getAfterSteps(Outcome.SUCCESS, storyAndScenarioMeta), steps, namedParameters, candidateSteps, Outcome.SUCCESS);
-            addMatchedSteps(lifecycle.getAfterSteps(Outcome.FAILURE, storyAndScenarioMeta), steps, namedParameters, candidateSteps, Outcome.FAILURE);
+            for (Outcome outcome : Outcome.values()){
+                addMatchedSteps(lifecycle.getAfterSteps(scope, outcome, storyAndScenarioMeta), steps, namedParameters,
+                        allCandidates, outcome, DEFAULT_STEP_MONITOR);
+            }
         }
         return steps;
     }
 
+    @Override
     public List<Step> collectScenarioSteps(List<CandidateSteps> candidateSteps, Scenario scenario,
             Map<String, String> parameters) {
-        return collectScenarioSteps(candidateSteps, scenario, parameters, new NullStepMonitor());
+        return collectScenarioSteps(candidateSteps, scenario, parameters, DEFAULT_STEP_MONITOR);
     }
 
+    @Override
     public List<Step> collectScenarioSteps(List<CandidateSteps> candidateSteps, Scenario scenario,
             Map<String, String> parameters, StepMonitor stepMonitor) {
-        List<Step> steps = new ArrayList<Step>();
-        addMatchedSteps(scenario.getSteps(), steps, parameters, candidateSteps, stepMonitor);
+        List<Step> steps = new ArrayList<>();
+        addMatchedSteps(scenario.getSteps(), steps, parameters, stepFinder.collectCandidates(candidateSteps), null,
+                stepMonitor);
         return steps;
     }
 
@@ -102,7 +120,7 @@ public class MarkUnmatchedStepsAsPending implements StepCollector {
     }
 
     private List<Step> createSteps(List<BeforeOrAfterStep> beforeOrAfter, Meta meta, Stage stage) {
-        List<Step> steps = new ArrayList<Step>();
+        List<Step> steps = new ArrayList<>();
         for (BeforeOrAfterStep step : beforeOrAfter) {
             if (stage == step.getStage()) {
                 steps.add(meta == null ? step.createStep() : step.createStepWith(meta));
@@ -112,7 +130,7 @@ public class MarkUnmatchedStepsAsPending implements StepCollector {
     }
 
     private List<Step> createStepsUponOutcome(List<BeforeOrAfterStep> beforeOrAfter, Meta storyAndScenarioMeta, Stage stage) {
-        List<Step> steps = new ArrayList<Step>();
+        List<Step> steps = new ArrayList<>();
         for (BeforeOrAfterStep step : beforeOrAfter) {
             if (stage == step.getStage()) {
                 steps.add(step.createStepUponOutcome(storyAndScenarioMeta));
@@ -122,52 +140,41 @@ public class MarkUnmatchedStepsAsPending implements StepCollector {
     }
 
     private void addMatchedSteps(List<String> stepsAsString, List<Step> steps, Map<String, String> namedParameters,
-            List<CandidateSteps> candidateSteps) {
-        addMatchedSteps(stepsAsString, steps, namedParameters, candidateSteps, (Outcome)null);
-    }
-
-    private void addMatchedSteps(List<String> stepsAsString, List<Step> steps, Map<String, String> namedParameters,
-            List<CandidateSteps> candidateSteps, Outcome outcome) {
-        addMatchedSteps(stepsAsString, steps, namedParameters, candidateSteps, outcome, new NullStepMonitor());
-    }
-
-    private void addMatchedSteps(List<String> stepsAsString, List<Step> steps, Map<String, String> namedParameters,
-            List<CandidateSteps> candidateSteps, StepMonitor stepMonitor) {
-        addMatchedSteps(stepsAsString, steps, namedParameters, candidateSteps, null, stepMonitor);
-    }
-
-    private void addMatchedSteps(List<String> stepsAsString, List<Step> steps, Map<String, String> namedParameters,
-            List<CandidateSteps> candidateSteps, Outcome outcome, StepMonitor stepMonitor) {
-        List<StepCandidate> allCandidates = stepFinder.collectCandidates(candidateSteps);
+            List<StepCandidate> allCandidates, Outcome outcome, StepMonitor stepMonitor) {
         String previousNonAndStep = null;
         for (String stepAsString : stepsAsString) {
             // pending is default step, overridden below
             Step step = StepCreator.createPendingStep(stepAsString, previousNonAndStep);
-            List<Step> composedSteps = new ArrayList<Step>();
-            List<StepCandidate> prioritisedCandidates = stepFinder.prioritise(stepAsString, allCandidates);
+            List<Step> composedSteps = new ArrayList<>();
+            List<StepCandidate> prioritisedCandidates = stepFinder.prioritise(stepAsString,
+                    new ArrayList<>(allCandidates));
             for (StepCandidate candidate : prioritisedCandidates) {
                 candidate.useStepMonitor(stepMonitor);
                 if (candidate.ignore(stepAsString)) {
-                    // ignorable steps are added
-                    // so they can be reported
+                    // ignorable steps are added so they can be reported
                     step = StepCreator.createIgnorableStep(stepAsString);
                     break;
                 }
-                if (matchesCandidate(stepAsString, previousNonAndStep, candidate)) {
+                if (candidate.comment(stepAsString)) {
+                    // comments are added so they can be reported
+                    step = StepCreator.createComment(stepAsString);
+                    break;
+                }
+                if (candidate.matches(stepAsString, previousNonAndStep)) {
                     // step matches candidate
                     if (candidate.isPending()) {
                         ((PendingStep) step).annotatedOn(candidate.getMethod());
                     } else {
-                    	if ( outcome != null ){
-                    		step = candidate.createMatchedStepUponOutcome(stepAsString, namedParameters, outcome);
-                    	} else {
-                    		step = candidate.createMatchedStep(stepAsString, namedParameters);
-                    	}
+                        if ( outcome != null ){
+                            step = candidate.createMatchedStepUponOutcome(stepAsString, namedParameters, outcome);
+                        } else {
+                            step = candidate.createMatchedStep(stepAsString, namedParameters);
+                        }
                         if ( candidate.isComposite() ){
-                            candidate.addComposedSteps(composedSteps, stepAsString, namedParameters, allCandidates);
+                            candidate.addComposedSteps(composedSteps, stepAsString, namedParameters, prioritisedCandidates);
                         }
                     }
-                    if (!(candidate.isAndStep(stepAsString) || candidate.isIgnorableStep(stepAsString))) {
+                    if (!(keywords.isAndStep(stepAsString) || keywords.isIgnorableStep(stepAsString))) {
                         // only update previous step if not AND or IGNORABLE step
                         previousNonAndStep = stepAsString;
                     }
@@ -181,12 +188,4 @@ public class MarkUnmatchedStepsAsPending implements StepCollector {
             steps.addAll(composedSteps);
         }
     }
-
-    private boolean matchesCandidate(String step, String previousNonAndStep, StepCandidate candidate) {
-        if (previousNonAndStep != null) {
-            return candidate.matches(step, previousNonAndStep);
-        }
-        return candidate.matches(step);
-    }
-
 }

@@ -7,7 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Helper class to find and retrieve annotated values
@@ -46,9 +46,9 @@ public class AnnotationFinder {
     @SuppressWarnings("unchecked")
     public <T, A extends Annotation> List<T> getAnnotatedValues(Class<A> annotationClass, Class<T> type,
             String memberName) {
-        Set<T> set = new LinkedHashSet<T>();
+        Set<T> set = new LinkedHashSet<>();
         if (!isAnnotationPresent(annotationClass)) {
-            return new ArrayList<T>(set);
+            return new ArrayList<>(set);
         }
         Object[] values = getAnnotatedValue(annotationClass, Object[].class, memberName);
         for (Object value : values) {
@@ -65,7 +65,7 @@ public class AnnotationFinder {
                 set.addAll(new AnnotationFinder(superClass).getAnnotatedValues(annotationClass, type, memberName));
             }
         }
-        return new ArrayList<T>(set);
+        return new ArrayList<>(set);
     }
 
     /**
@@ -91,7 +91,7 @@ public class AnnotationFinder {
 
     protected Object getAnnotationValue(Annotation annotation, String attributeName) {
         try {
-            Method method = annotation.annotationType().getDeclaredMethod(attributeName, new Class[0]);
+            Method method = annotation.annotationType().getDeclaredMethod(attributeName);
             return method.invoke(annotation);
         } catch (Exception e) {
             return null;

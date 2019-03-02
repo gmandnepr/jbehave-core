@@ -2,6 +2,7 @@ package org.jbehave.core.io.rest.filesystem;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class ImportToFilesystemBehaviour {
         ResourceIndexer indexer = mock(ResourceIndexer.class);
         ResourceLoader loader = mock(ResourceLoader.class);
         String rootURI = "http://wiki";
-        Map<String, Resource> index = new HashMap<String, Resource>();
+        Map<String, Resource> index = new HashMap<>();
         index.put("one", new Resource(rootURI + "/one"));
         index.put("two", new Resource(rootURI + "/two"));
         when(indexer.indexResources(rootURI)).thenReturn(index);
@@ -48,10 +49,10 @@ public class ImportToFilesystemBehaviour {
         // Then
         File file1 = new File(targetPath + "/one" + targetExt);
         assertThat(file1.exists(), equalTo(true));
-        assertThat(readFileToString(file1), equalTo(text1));
+        assertThat(readFileToString(file1, StandardCharsets.UTF_8), equalTo(text1));
         File file2 = new File(targetPath + "/two" + targetExt);
         assertThat(file2.exists(), equalTo(true));
-        assertThat(readFileToString(file2), equalTo(text2));
+        assertThat(readFileToString(file2, StandardCharsets.UTF_8), equalTo(text2));
 
     }
 

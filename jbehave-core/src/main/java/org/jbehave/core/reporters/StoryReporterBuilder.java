@@ -56,7 +56,7 @@ import static java.util.Arrays.asList;
  * </p>
  * <p>
  * The builder configures the file-based reporters to output to the default file
- * directory {@link FileConfiguration#DIRECTORY} as relative to the code
+ * directory {@link FileConfiguration#RELATIVE_DIRECTORY} as relative to the code
  * location. In some case, e.g. with Ant class loader, the code source location
  * from class may not be properly set. In this case, we may specify it from a
  * file:
@@ -126,12 +126,13 @@ import static java.util.Arrays.asList;
 public class StoryReporterBuilder {
 
     public enum Format {
-        CONSOLE(org.jbehave.core.reporters.Format.CONSOLE), IDE_CONSOLE(
-                org.jbehave.core.reporters.Format.IDE_CONSOLE), TXT(
-                org.jbehave.core.reporters.Format.TXT), HTML(
-                org.jbehave.core.reporters.Format.HTML), XML(
-                org.jbehave.core.reporters.Format.XML), STATS(
-                org.jbehave.core.reporters.Format.STATS);
+        CONSOLE(org.jbehave.core.reporters.Format.CONSOLE),
+        IDE_CONSOLE(org.jbehave.core.reporters.Format.IDE_CONSOLE),
+        TXT(org.jbehave.core.reporters.Format.TXT),
+        HTML(org.jbehave.core.reporters.Format.HTML),
+        XML(org.jbehave.core.reporters.Format.XML),
+        JSON(org.jbehave.core.reporters.Format.JSON),
+        STATS(org.jbehave.core.reporters.Format.STATS);
 
         private org.jbehave.core.reporters.Format realFormat;
 
@@ -141,7 +142,7 @@ public class StoryReporterBuilder {
 
     }
 
-    private List<org.jbehave.core.reporters.Format> formats = new ArrayList<org.jbehave.core.reporters.Format>();
+    private List<org.jbehave.core.reporters.Format> formats = new ArrayList<>();
     protected String relativeDirectory;
     protected FilePathResolver pathResolver;
     protected URL codeLocation;
@@ -149,7 +150,9 @@ public class StoryReporterBuilder {
     protected boolean reportFailureTrace = false;
     protected boolean compressFailureTrace = false;
     protected Keywords keywords;
+    protected SGRCodes codes;
     protected CrossReference crossReference;
+    protected SurefireReporter surefireReporter;
     protected boolean multiThreading;
     protected Configuration configuration;
     private FileConfiguration defaultFileConfiguration = new FileConfiguration();
@@ -195,7 +198,7 @@ public class StoryReporterBuilder {
         if (keywords instanceof LocalizedKeywords) {
             locale = ((LocalizedKeywords) keywords).getLocale();
         }
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (org.jbehave.core.reporters.Format format : formats) {
             String name = format.name();
             if (toLowerCase) {
@@ -214,6 +217,13 @@ public class StoryReporterBuilder {
             keywords = new LocalizedKeywords();
         }
         return keywords;
+    }
+
+    public SGRCodes codes(){
+        if ( codes == null ){
+            return new SGRCodes();
+        }
+        return codes;
     }
 
     public boolean multiThreading() {
@@ -269,17 +279,30 @@ public class StoryReporterBuilder {
         return this;
     }
 
+    public SurefireReporter surefireReporter() {
+        return surefireReporter;
+    }
+
+    public boolean hasSurefireReporter() {
+        return surefireReporter != null;
+    }
+
+    public StoryReporterBuilder withSurefireReporter(SurefireReporter surefireReporter) {
+        this.surefireReporter = surefireReporter;
+        return this;
+    }
+
     public StoryReporterBuilder withDefaultFormats() {
         return withFormats(Format.STATS);
     }
 
     /**
-     * @deprecated Use {@link withFormats(org.jbehave.core.reporters.Format...
+     * @deprecated Use {@link #withFormats(org.jbehave.core.reporters.Format...
      *             formats)}
      */
     @Deprecated
     public StoryReporterBuilder withFormats(Format... formats) {
-        List<org.jbehave.core.reporters.Format> formatz = new ArrayList<org.jbehave.core.reporters.Format>();
+        List<org.jbehave.core.reporters.Format> formatz = new ArrayList<>();
         for (Format format : formats) {
             formatz.add(format.realFormat);
         }
@@ -316,6 +339,11 @@ public class StoryReporterBuilder {
         return this;
     }
 
+    public StoryReporterBuilder withCodes(SGRCodes codes) {
+        this.codes = codes;
+        return this;
+    }
+
     public StoryReporterBuilder withMultiThreading(boolean multiThreading) {
         this.multiThreading = multiThreading;
         return this;
@@ -327,7 +355,7 @@ public class StoryReporterBuilder {
     }
 
     public StoryReporter build(String storyPath) {
-        Map<org.jbehave.core.reporters.Format, StoryReporter> delegates = new HashMap<org.jbehave.core.reporters.Format, StoryReporter>();
+        Map<org.jbehave.core.reporters.Format, StoryReporter> delegates = new HashMap<>();
         for (org.jbehave.core.reporters.Format format : formats) {
             delegates.put(format, reporterFor(storyPath, format));
         }
@@ -339,7 +367,7 @@ public class StoryReporterBuilder {
     }
 
     public Map<String, StoryReporter> build(List<String> storyPaths) {
-        Map<String, StoryReporter> reporters = new HashMap<String, StoryReporter>();
+        Map<String, StoryReporter> reporters = new HashMap<>();
         for (String storyPath : storyPaths) {
             reporters.put(storyPath, build(storyPath));
         }

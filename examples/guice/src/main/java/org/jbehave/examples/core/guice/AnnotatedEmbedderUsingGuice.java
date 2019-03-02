@@ -14,8 +14,6 @@ import org.jbehave.core.io.LoadFromClasspath;
 import org.jbehave.core.io.StoryFinder;
 import org.jbehave.core.io.StoryLoader;
 import org.jbehave.core.junit.guice.GuiceAnnotatedEmbedderRunner;
-import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
-import org.jbehave.core.parsers.StepPatternParser;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.ParameterConverters.DateConverter;
 import org.jbehave.core.steps.ParameterConverters.ParameterConverter;
@@ -53,6 +51,7 @@ import static org.jbehave.core.reporters.Format.XML;
 @UsingGuice(modules = { ConfigurationModule.class, StepsModule.class })
 public class AnnotatedEmbedderUsingGuice extends InjectableEmbedder {
 
+    @Override
     @Test
     public void run() {
         injectedEmbedder().runStoriesAsPaths(storyPaths());
@@ -68,7 +67,6 @@ public class AnnotatedEmbedderUsingGuice extends InjectableEmbedder {
         @Override
         protected void configure() {
             bind(StoryControls.class).toInstance(new StoryControls().doDryRun(false).doSkipScenariosAfterFailure(false));
-            bind(StepPatternParser.class).toInstance(new RegexPrefixCapturingPatternParser("%"));
             bind(StoryLoader.class).toInstance(new LoadFromClasspath(this.getClass().getClassLoader()));
             bind(ParameterConverter.class).toInstance(new DateConverter(new SimpleDateFormat("yyyy-MM-dd")));
             bind(StoryReporterBuilder.class).toInstance(

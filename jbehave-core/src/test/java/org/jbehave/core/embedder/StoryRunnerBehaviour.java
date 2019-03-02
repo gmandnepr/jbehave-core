@@ -1,76 +1,43 @@
 package org.jbehave.core.embedder;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.jbehave.core.steps.AbstractStepResult.failed;
-import static org.jbehave.core.steps.AbstractStepResult.notPerformed;
-import static org.jbehave.core.steps.AbstractStepResult.pending;
-import static org.jbehave.core.steps.AbstractStepResult.successful;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.jbehave.core.annotations.ScenarioType;
+import org.jbehave.core.annotations.Scope;
+import org.jbehave.core.configuration.Configuration;
+import org.jbehave.core.configuration.MostUsefulConfiguration;
+import org.jbehave.core.embedder.StoryRunner.State;
+import org.jbehave.core.failures.*;
+import org.jbehave.core.io.LoadFromClasspath;
+import org.jbehave.core.io.StoryLoader;
+import org.jbehave.core.model.*;
+import org.jbehave.core.parsers.RegexStoryParser;
+import org.jbehave.core.parsers.StoryParser;
+import org.jbehave.core.reporters.ConcurrentStoryReporter;
+import org.jbehave.core.reporters.StoryReporter;
+import org.jbehave.core.steps.*;
+import org.jbehave.core.steps.StepCollector.Stage;
+import org.jbehave.core.steps.StepCreator.AbstractStep;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jbehave.core.annotations.ScenarioType;
-import org.jbehave.core.configuration.Configuration;
-import org.jbehave.core.configuration.MostUsefulConfiguration;
-import org.jbehave.core.embedder.StoryRunner.State;
-import org.jbehave.core.failures.FailingUponPendingStep;
-import org.jbehave.core.failures.FailureStrategy;
-import org.jbehave.core.failures.PassingUponPendingStep;
-import org.jbehave.core.failures.PendingStepFound;
-import org.jbehave.core.failures.PendingStepStrategy;
-import org.jbehave.core.failures.RestartingScenarioFailure;
-import org.jbehave.core.failures.RethrowingFailure;
-import org.jbehave.core.failures.UUIDExceptionWrapper;
-import org.jbehave.core.io.LoadFromClasspath;
-import org.jbehave.core.io.StoryLoader;
-import org.jbehave.core.model.Description;
-import org.jbehave.core.model.ExamplesTable;
-import org.jbehave.core.model.GivenStories;
-import org.jbehave.core.model.Lifecycle;
-import org.jbehave.core.model.Meta;
-import org.jbehave.core.model.Narrative;
-import org.jbehave.core.model.Scenario;
-import org.jbehave.core.model.Story;
-import org.jbehave.core.model.StoryDuration;
-import org.jbehave.core.parsers.RegexStoryParser;
-import org.jbehave.core.parsers.StoryParser;
-import org.jbehave.core.reporters.ConcurrentStoryReporter;
-import org.jbehave.core.reporters.StoryReporter;
-import org.jbehave.core.steps.AbstractStepResult;
-import org.jbehave.core.steps.CandidateSteps;
-import org.jbehave.core.steps.InjectableStepsFactory;
-import org.jbehave.core.steps.Step;
-import org.jbehave.core.steps.StepCollector;
-import org.jbehave.core.steps.StepCollector.Stage;
-import org.jbehave.core.steps.StepCreator.AbstractStep;
-import org.jbehave.core.steps.StepResult;
-import org.jbehave.core.steps.Steps;
-import org.junit.Test;
-import org.mockito.InOrder;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
+import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.jbehave.core.steps.AbstractStepResult.*;
+import static org.mockito.Mockito.*;
 
 public class StoryRunnerBehaviour {
 
-    private Map<String, String> parameters = new HashMap<String, String>();
+    private Map<String, String> parameters = new HashMap<>();
 
     @Test
-    public void shouldRunStepsBeforeAndAfterStories() throws Throwable {
+    public void shouldRunStepsBeforeAndAfterStories() {
         // Given
         Step beforeStep = mock(Step.class, "beforeStep");
         StepResult beforeResult = mock(StepResult.class);
@@ -96,7 +63,7 @@ public class StoryRunnerBehaviour {
     }
 
     @Test
-    public void shouldReportFailuresInStepsBeforeAndAfterStories() throws Throwable {
+    public void shouldReportFailuresInStepsBeforeAndAfterStories() {
         // Given
         Step beforeStep = mock(Step.class, "beforeStep");
         StepResult beforeResult = mock(StepResult.class, "beforeStep");
@@ -227,8 +194,7 @@ public class StoryRunnerBehaviour {
 
     
     @Test
-	public void shouldIgnoreMetaFilteringInGivenStoriesIfConfigured()
-			throws Throwable {
+	public void shouldIgnoreMetaFilteringInGivenStoriesIfConfigured() {
 		// Given
 		Scenario scenario = new Scenario("scenario", new Meta(
 				asList("run false")), new GivenStories("/path/to/given/story"),
@@ -300,6 +266,7 @@ public class StoryRunnerBehaviour {
         final RestartingScenarioFailure hi = new RestartingScenarioFailure("hi");
         Step restartStep = new AbstractStep() {
             private int count = 0;
+            @Override
             public StepResult perform(UUIDExceptionWrapper storyFailureIfItHappened) {
                 if (count == 0) {
                     count++;
@@ -308,6 +275,7 @@ public class StoryRunnerBehaviour {
                 return new AbstractStepResult.Successful("When happened on second attempt");
             }
 
+            @Override
             public StepResult doNotPerform(UUIDExceptionWrapper storyFailureIfItHappened) {
                 return null;
             }
@@ -364,7 +332,7 @@ public class StoryRunnerBehaviour {
             StoryRunner runner = new StoryRunner();
             runner.cancelStory(story, storyDuration);
             runner.run(configuration, stepsFactory, story, metaFilter, state);
-            fail("A exception should be thrown");
+            throw new AssertionError("A exception should be thrown");
         } catch (Throwable e) {
         //Then
             assertThat(e.equals(expected), is(true));
@@ -965,7 +933,7 @@ public class StoryRunnerBehaviour {
 
     private void givenLifecycleStep(Stage stage, StepCollector collector, CandidateSteps mySteps) {
         Step beforeStep = mockSuccessfulStep(lifecycleStepNameFor(stage));
-        when(collector.collectLifecycleSteps(eq(asList(mySteps)), eq(Lifecycle.EMPTY), any(Meta.class), eq(stage))).thenReturn(asList(beforeStep));
+        when(collector.collectLifecycleSteps(eq(asList(mySteps)), eq(Lifecycle.EMPTY), any(Meta.class), eq(stage), eq(Scope.SCENARIO))).thenReturn(asList(beforeStep));
     }
 
     private String lifecycleStepNameFor(Stage stage) {
@@ -988,8 +956,9 @@ public class StoryRunnerBehaviour {
 
     private Configuration configurationWithPendingStrategy(StepCollector collector, StoryReporter reporter,
                                                                 PendingStepStrategy strategy) {
-        return configurationWith(new RegexStoryParser(), new LoadFromClasspath(), reporter, collector,
-                new RethrowingFailure(), strategy);
+        LoadFromClasspath resourceLoadder = new LoadFromClasspath();
+        RegexStoryParser storyParser = new RegexStoryParser(resourceLoadder, new TableTransformers());
+        return configurationWith(storyParser, resourceLoadder, reporter, collector, new RethrowingFailure(), strategy);
     }
 
     private Configuration configurationWith(final StoryReporter reporter, final StepCollector collector) {
@@ -997,7 +966,9 @@ public class StoryRunnerBehaviour {
     }
 
     private Configuration configurationWith(StoryReporter reporter, StepCollector collector, FailureStrategy failureStrategy) {
-        return configurationWith(new RegexStoryParser(), new LoadFromClasspath(), reporter, collector, failureStrategy);
+        LoadFromClasspath resourceLoadder = new LoadFromClasspath();
+        RegexStoryParser storyParser = new RegexStoryParser(resourceLoadder, new TableTransformers());
+        return configurationWith(storyParser, resourceLoadder, reporter, collector, failureStrategy);
     }
 
     private Configuration configurationWith(StoryParser parser, final StoryLoader storyLoader, final StoryReporter reporter,

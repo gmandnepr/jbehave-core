@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.hamcrest.Matcher;
 import org.jbehave.core.configuration.Keywords;
 import org.jbehave.core.failures.UUIDExceptionWrapper;
@@ -20,8 +20,8 @@ public class OutcomesTable {
 
     private final Keywords keywords;
 	private final String dateFormat;
-    private final List<Outcome<?>> outcomes = new ArrayList<Outcome<?>>();
-    private final List<Outcome<?>> failedOutcomes = new ArrayList<Outcome<?>>();
+    private final List<Outcome<?>> outcomes = new ArrayList<>();
+    private final List<Outcome<?>> failedOutcomes = new ArrayList<>();
     private UUIDExceptionWrapper failureCause;
     
     public OutcomesTable() {
@@ -38,7 +38,7 @@ public class OutcomesTable {
     }
 
     public <T> void addOutcome(String description, T value, Matcher<T> matcher) {
-        outcomes.add(new Outcome<T>(description, value, matcher));
+        outcomes.add(new Outcome<>(description, value, matcher));
     }
 
     public void verify() {

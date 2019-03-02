@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * <p>
@@ -53,7 +53,7 @@ public class StepFinder {
      * @return The List of Stepdocs, one for each {@link StepCandidate}.
      */
     public List<Stepdoc> stepdocs(List<CandidateSteps> candidateSteps) {
-        List<Stepdoc> stepdocs = new LinkedList<Stepdoc>();
+        List<Stepdoc> stepdocs = new LinkedList<>();
         for (StepCandidate candidate : collectCandidates(candidateSteps)) {
             stepdocs.add(new Stepdoc(candidate));
         }
@@ -71,7 +71,7 @@ public class StepFinder {
      * @return The list of Stepdocs, one for each matched {@link StepCandidate}.
      */
     public List<Stepdoc> findMatching(String stepAsText, List<CandidateSteps> candidateSteps) {
-        List<Stepdoc> matching = new ArrayList<Stepdoc>();
+        List<Stepdoc> matching = new ArrayList<>();
         for (StepCandidate candidate : collectCandidates(candidateSteps)) {
             if (candidate.matches(stepAsText)) {
                 matching.add(new Stepdoc(candidate));
@@ -88,7 +88,7 @@ public class StepFinder {
      * @return The List of steps instances
      */
     public List<Object> stepsInstances(List<CandidateSteps> candidateSteps) {
-        List<Object> instances = new ArrayList<Object>();
+        List<Object> instances = new ArrayList<>();
         for (CandidateSteps steps : candidateSteps) {
             if (steps instanceof Steps) {
                 instances.add(((Steps) steps).instance());
@@ -105,7 +105,7 @@ public class StepFinder {
      * @return A List of {@link StepCandidate}
      */
     public List<StepCandidate> collectCandidates(List<CandidateSteps> candidateSteps) {
-        List<StepCandidate> collected = new ArrayList<StepCandidate>();
+        List<StepCandidate> collected = new ArrayList<>();
         for (CandidateSteps steps : candidateSteps) {
             collected.addAll(steps.listCandidates());
         }
@@ -142,8 +142,10 @@ public class StepFinder {
      */
     public static class ByPriorityField implements PrioritisingStrategy {
 
+        @Override
         public List<StepCandidate> prioritise(String stepAsText, List<StepCandidate> candidates) {
             Collections.sort(candidates, new Comparator<StepCandidate>() {
+                @Override
                 public int compare(StepCandidate o1, StepCandidate o2) {
                     return o2.getPriority().compareTo(o1.getPriority());
                 }
@@ -161,8 +163,10 @@ public class StepFinder {
 
         private LevenshteinDistance ld = new LevenshteinDistance();
 
+        @Override
         public List<StepCandidate> prioritise(final String stepAsText, List<StepCandidate> candidates) {
             Collections.sort(candidates, new Comparator<StepCandidate>() {
+                @Override
                 public int compare(StepCandidate o1, StepCandidate o2) {
                     String scoringPattern1 = scoringPattern(o1);
                     String scoringPattern2 = scoringPattern(o2);

@@ -17,14 +17,16 @@ public class CompositeStepsFactory implements InjectableStepsFactory {
         this.stepsFactories = stepsFactories;
     }
 
+    @Override
     public List<CandidateSteps> createCandidateSteps() {
-        List<CandidateSteps> steps = new ArrayList<CandidateSteps>();
+        List<CandidateSteps> steps = new ArrayList<>();
         for (InjectableStepsFactory factory : stepsFactories) {
             steps.addAll(factory.createCandidateSteps());
         }
         return steps;
     }
 
+    @Override
     public Object createInstanceOfType(Class<?> type) {
         Object instance = null;
         for (InjectableStepsFactory factory : stepsFactories) {

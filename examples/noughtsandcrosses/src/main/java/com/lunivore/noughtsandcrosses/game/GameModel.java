@@ -7,15 +7,17 @@ import java.util.Map;
 
 public class GameModel implements Game {
 
-    private Map<Coord, Player> map = new HashMap<Coord, Player>();
+    private Map<Coord, Player> map = new HashMap<>();
     private Player currentPlayer = Player.X;
-    private List<GameObserver> observers = new ArrayList<GameObserver>();
+    private List<GameObserver> observers = new ArrayList<>();
 
+    @Override
     public void addObserver(GameObserver observer) {
         observers.add(observer);
         observer.gameChanged(this);
     }
 
+    @Override
     public void playerActsAt(int column, int row) {
         map.put(new Coord(column, row), currentPlayer);
         if (gameWon()) {
@@ -51,11 +53,13 @@ public class GameModel implements Game {
         currentPlayer = currentPlayer == Player.X ? Player.O : Player.X;
     }
 
+    @Override
     public Player playerAt(int column, int row) {
         Player player = map.get(new Coord(column, row));
         return player == null ? Player.NONE : player;
     }
 
+    @Override
     public Player currentPlayer() {
         return currentPlayer;
     }

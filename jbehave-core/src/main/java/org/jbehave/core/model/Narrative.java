@@ -1,7 +1,7 @@
 package org.jbehave.core.model;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jbehave.core.configuration.Keywords;
 
 public class Narrative {
@@ -52,7 +52,7 @@ public class Narrative {
     }
 
     public String asString(Keywords keywords) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (isAlternative()) {
 			sb.append(keywords.asA()).append(SPACE).append(asA).append(NL);
 			sb.append(keywords.iWantTo()).append(SPACE).append(iWantTo)

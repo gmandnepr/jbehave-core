@@ -51,7 +51,7 @@ public class EmbedderClassLoaderBehaviour {
 
     @Test(expected=InvalidClasspathElement.class)
     public void shouldNotIgnoreAnIndividualClasspathElementThatIsNull(){
-        List<String> elements = asList("target/classes", (String)null);
+        List<String> elements = asList("target/classes", null);
         EmbedderClassLoader classLoader = new EmbedderClassLoader(elements);
         assertThatIsInstantiated(classLoader, MyStory.class.getName(), MyStory.class);
     }
@@ -65,7 +65,7 @@ public class EmbedderClassLoaderBehaviour {
 
     @Test
     public void shouldProvideShortJarPathUrlContentAsString() throws MalformedURLException {
-        EmbedderClassLoader classLoader = new EmbedderClassLoader(Arrays.<String> asList("/path/to/one.jar",
+        EmbedderClassLoader classLoader = new EmbedderClassLoader(Arrays.asList("/path/to/one.jar",
                 "/target/classes"));
         assertThat(classLoader.toString(),
                 containsString("urls=" + classLoader.asShortPaths(new File("one.jar").toURI().toURL(), new File("/target/classes").toURI().toURL())));

@@ -28,10 +28,12 @@ public class IndexFromConfluence implements ResourceIndexer {
         this.confluence = new Confluence(client);
     }
 
+    @Override
     public Map<String, Resource> indexResources(String rootURI) {
         return indexResources(rootURI, null);
     }
 
+    @Override
     public Map<String, Resource> indexResources(String rootURI, String rootPath, String syntax, String includes) {
         return indexResources(rootURI, includes);
     }
@@ -53,7 +55,7 @@ public class IndexFromConfluence implements ResourceIndexer {
     }
 
     private Map<String, Resource> createResourceMap(String baseUrl, String spaceKey, String pageName, String pattern) {
-        Map<String, Resource> result = new HashMap<String, Resource>();
+        Map<String, Resource> result = new HashMap<>();
         Page rootPage = confluence.loadRootPage(baseUrl, spaceKey, pageName);
         addPage(result, rootPage.getSelfReference(), pattern);
         return result;

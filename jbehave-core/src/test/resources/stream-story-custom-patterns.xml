@@ -1,0 +1,92 @@
+<story path="/path/to/story" title="An interesting story &amp; special chars">
+<meta>
+<property keyword="@" name="author" value="Mauro"/>
+<property keyword="@" name="theme" value="testing"/>
+</meta>
+<dryRun>DRY RUN</dryRun>
+<narrative keyword="Narrative:">
+  <inOrderTo keyword="In order to">renovate my house</inOrderTo>
+  <asA keyword="As a">customer</asA>
+  <iWantTo keyword="I want to">get a loan</iWantTo>
+</narrative>
+<lifecycle keyword="Lifecycle:">
+<before keyword="Before:">
+<scope keyword="Scope:" value="SCENARIO">
+<step>Given a scenario step</step>
+</scope>
+<scope keyword="Scope:" value="STORY">
+<step>Given a story step</step>
+</scope>
+</before>
+<after keyword="After:">
+<scope keyword="Scope:" value="SCENARIO">
+<outcome keyword="Outcome:" value="ANY">
+<step>Given a scenario step</step>
+</outcome>
+</scope>
+<scope keyword="Scope:" value="STORY">
+<outcome keyword="Outcome:" value="ANY">
+<step>Given a story step</step>
+</outcome>
+</scope>
+</after>
+</lifecycle>
+<scenario keyword="Scenario:" title="I ask for a loan">
+<givenStories keyword="GivenStories:">
+<givenStory parameters="">/given/story1</givenStory>
+<givenStory parameters="">/given/story2</givenStory>
+</givenStories>
+<step outcome="successful">Given I have a balance of $50</step>
+<step outcome="ignorable">!-- Then ignore me</step>
+<step outcome="comment">!-- A comment</step>
+<step outcome="successful">When I request $20</step>
+<step outcome="successful">When I ask Liz for a loan of $100</step>
+<step outcome="successful">When I ask Liz for a loan of $<parameter>99</parameter></step>
+<step outcome="successful">When I write special chars &lt;&gt;&amp;&quot;</step>
+<step outcome="successful">When I write special chars in parameter <parameter>&lt;&gt;&amp;&quot;</parameter></step>
+<step outcome="successful">When I write two parameters <parameter>,,,</parameter> and <parameter>&amp;&amp;&amp;</parameter></step>
+<step outcome="restarted">Then I should... - try again<reason>hi</reason></step>
+<story outcome="restartedStory">/path/to/story<reason>Restarted Story</reason></story>
+<cancelled keyword="STORY CANCELLED" durationKeyword="DURATION" durationInSecs="2"/>
+<step outcome="pending" keyword="PENDING">Then I should have a balance of $30</step>
+<step outcome="notPerformed" keyword="NOT PERFORMED">Then I should have $20</step>
+<step outcome="failed" keyword="FAILED">Then I don&apos;t return loan<failure>org.jbehave.core.model.OutcomesTable$OutcomesFailed</failure></step>
+<outcomes>
+<fields><field>Description</field><field>Value</field><field>Matcher</field><field>Verified</field></fields>
+<outcome><value>I don&apos;t return all</value><value>100.0</value><value>&lt;50.0&gt;</value><value>No</value></outcome>
+<outcome><value>A wrong date</value><value>01/01/2011</value><value>&quot;02/01/2011&quot;</value><value>No</value></outcome>
+</outcomes>
+</scenario><!-- after scenario -->
+<scenario keyword="Scenario:" title="Parametrised Scenario">
+<examples keyword="Examples:">
+<step>Given money &lt;money&gt;</step>
+<step>Then I give it to &lt;to&gt;</step>
+<parameters>
+<names><name>money</name><name>to</name></names>
+<values><value>$30</value><value>Mauro</value></values>
+<values><value>$50</value><value>Paul</value></values>
+</parameters>
+
+<example keyword="Example:">{money=$30, to=Mauro}</example>
+<step outcome="successful">Given money $30</step>
+<step outcome="successful">Then I give it to Mauro</step>
+
+<example keyword="Example:">{money=$50, to=Paul}</example>
+<step outcome="successful">Given money $50</step>
+<step outcome="successful">Then I give it to Paul</step>
+<step outcome="pending" keyword="PENDING">Then I should have a balance of $30</step>
+</examples><!-- after examples -->
+</scenario><!-- after scenario -->
+<pendingMethod>@When(&quot;something \&quot;$param\&quot;&quot;)
+@Pending
+public void whenSomething() {
+  // PENDING
+}
+</pendingMethod>
+<pendingMethod>@Then(&quot;something is &lt;param1&gt;&quot;)
+@Pending
+public void thenSomethingIsParam1() {
+  // PENDING
+}
+</pendingMethod>
+</story><!-- after story -->

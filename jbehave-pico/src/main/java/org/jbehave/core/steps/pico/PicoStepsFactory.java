@@ -28,7 +28,7 @@ public class PicoStepsFactory extends AbstractStepsFactory {
 
 	@Override
 	protected List<Class<?>> stepsTypes() {
-		List<Class<?>> types = new ArrayList<Class<?>>();
+		List<Class<?>> types = new ArrayList<>();
 		for (ComponentAdapter<?> adapter : parent.getComponentAdapters()) {
 			if (hasAnnotatedMethods(adapter.getComponentImplementation())) {
 				types.add(adapter.getComponentImplementation());
@@ -37,6 +37,7 @@ public class PicoStepsFactory extends AbstractStepsFactory {
 		return types;
 	}
 
+    @Override
     public Object createInstanceOfType(Class<?> type) {
         Object instance = parent.getComponent(type);
         if ( instance == null ){

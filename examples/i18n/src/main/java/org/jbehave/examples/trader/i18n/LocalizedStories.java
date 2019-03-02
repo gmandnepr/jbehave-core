@@ -2,7 +2,6 @@ package org.jbehave.examples.trader.i18n;
 
 import java.net.URL;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -13,15 +12,17 @@ import org.jbehave.core.configuration.MostUsefulConfiguration;
 import org.jbehave.core.i18n.LocalizedKeywords;
 import org.jbehave.core.io.CodeLocations;
 import org.jbehave.core.io.LoadFromClasspath;
+import org.jbehave.core.io.ResourceLoader;
 import org.jbehave.core.io.StoryFinder;
 import org.jbehave.core.junit.JUnitStories;
 import org.jbehave.core.model.ExamplesTableFactory;
+import org.jbehave.core.model.TableTransformers;
 import org.jbehave.core.parsers.RegexStoryParser;
 import org.jbehave.core.reporters.FilePrintStreamFactory.ResolveToSimpleName;
 import org.jbehave.core.reporters.StoryReporterBuilder;
 import org.jbehave.core.steps.CandidateSteps;
 import org.jbehave.core.steps.InstanceStepsFactory;
-import org.jbehave.core.steps.MarkUnmatchedStepsAsPending;
+import org.jbehave.core.steps.ParameterControls;
 import org.jbehave.core.steps.ParameterConverters;
 import org.jbehave.core.steps.ParameterConverters.ExamplesTableConverter;
 import org.jbehave.core.steps.ParameterConverters.NumberConverter;
@@ -53,12 +54,15 @@ public abstract class LocalizedStories extends JUnitStories {
         Properties properties = new Properties();
         properties.setProperty("reports", "ftl/jbehave-reports.ftl");
         properties.setProperty("encoding", "UTF-8");
-        Configuration configuration = new MostUsefulConfiguration()
+        LoadFromClasspath resourceLoader = new LoadFromClasspath(classLoader);
+        TableTransformers tableTransformers = new TableTransformers();
+        ParameterControls parameterControls = new ParameterControls();
+        ParameterConverters parameterConverters = new ParameterConverters(resourceLoader, parameterControls,
+                tableTransformers, true).addConverters(customConverters(keywords, resourceLoader, tableTransformers));
+        return new MostUsefulConfiguration()
                 .useKeywords(keywords)
-                .useStepCollector(new MarkUnmatchedStepsAsPending(keywords))
-                .useStoryParser(new RegexStoryParser(keywords))
-                .useStoryLoader(
-                        new LoadFromClasspath(classLoader))
+                .useStoryParser(new RegexStoryParser(keywords, resourceLoader, tableTransformers))
+                .useStoryLoader(resourceLoader)
                 .useStoryReporterBuilder(new StoryReporterBuilder()
                     .withCodeLocation(codeLocation)
                     .withPathResolver(new ResolveToSimpleName())
@@ -67,16 +71,15 @@ public abstract class LocalizedStories extends JUnitStories {
                     .withFailureTrace(false)
                     .withViewResources(properties)
                     .withKeywords(keywords))
-                .useParameterConverters(
-                        new ParameterConverters().addConverters(customConverters(keywords)));
-        return configuration;
+                .useParameterConverters(parameterConverters)
+                .useParameterControls(parameterControls)
+                .useTableTransformers(tableTransformers);
     }
     
-    private ParameterConverter[] customConverters(Keywords keywords) {
-        List<ParameterConverter> converters = new ArrayList<ParameterConverter>();
-        converters.add(new NumberConverter(NumberFormat.getInstance(locale())));
-        converters.add(new ExamplesTableConverter(new ExamplesTableFactory(keywords)));
-        return converters.toArray(new ParameterConverter[converters.size()]);
+    private ParameterConverter[] customConverters(Keywords keywords, ResourceLoader resourceLoader,
+            TableTransformers tableTransformers) {
+        return new ParameterConverter[] { new NumberConverter(NumberFormat.getInstance(locale())),
+                new ExamplesTableConverter(new ExamplesTableFactory(keywords, resourceLoader, tableTransformers)) };
     }
 
     @Override

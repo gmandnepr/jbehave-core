@@ -49,6 +49,7 @@
     <name>Advanced Topics</name>
     <page>archetypes.html</page>
     <page>aliases.html</page>
+    <page>lifecycle.html</page>
     <page>keyword-synonyms.html</page>
     <page>pattern-variants.html</page>
     <page>dependency-injection.html</page>
@@ -65,8 +66,9 @@
     <page>story-mapping.html</page>
     <page>story-timeouts.html</page>
     <page>story-transformers.html</page>
-    <page>cross-reference.html</page>    
-    <page>context-view.html</page>    
+    <page>cross-reference.html</page>
+    <page>surefire-reporter.html</page>
+    <page>context-view.html</page>
     <page>multi-threading.html</page>    
     <page>using-rest.html</page>    
     <page>using-groovy.html</page>    
